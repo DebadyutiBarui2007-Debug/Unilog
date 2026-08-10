@@ -25,6 +25,7 @@ import {
   Layers, 
   Search, 
   ChevronRight, 
+  ChevronLeft,
   ChevronDown, 
   ArrowRight, 
   Activity, 
@@ -178,6 +179,17 @@ export default function RecursiveLearningStudio({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSector, setSelectedSector] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
+
+  // Pagination & Lazy Loading States
+  const [datasetViewMode, setDatasetViewMode] = useState<'pagination' | 'lazy-load'>('pagination');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+  const [lazyLoadLimit, setLazyLoadLimit] = useState<number>(25);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setLazyLoadLimit(25);
+  }, [searchTerm, selectedSector, selectedDifficulty]);
 
   // Batch Selection State
   const [selectedBatchPreset, setSelectedBatchPreset] = useState<string>('batch-1');
@@ -1596,6 +1608,150 @@ export default function RecursiveLearningStudio({
               </div>
             </div>
 
+            {/* Pagination & Lazy Loading Toolbar */}
+            <div className="bg-[#12151E] border border-[#252A38] rounded-xl p-3 flex flex-wrap items-center justify-between gap-4 font-mono text-xs shadow-lg">
+              {/* Left: View Mode Toggle */}
+              <div className="flex items-center gap-1.5 bg-[#0A0C10] p-1 rounded-lg border border-[#232838]">
+                <button
+                  onClick={() => setDatasetViewMode('pagination')}
+                  className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+                    datasetViewMode === 'pagination'
+                      ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                      : 'text-gray-400 hover:text-white border border-transparent'
+                  }`}
+                >
+                  <BookOpen size={13} />
+                  <span>Pagination Mode</span>
+                </button>
+                <button
+                  onClick={() => setDatasetViewMode('lazy-load')}
+                  className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+                    datasetViewMode === 'lazy-load'
+                      ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
+                      : 'text-gray-400 hover:text-white border border-transparent'
+                  }`}
+                >
+                  <Layers size={13} />
+                  <span>Lazy-Load Mode</span>
+                </button>
+              </div>
+
+              {/* Right: Mode-specific Controls */}
+              {datasetViewMode === 'pagination' ? (
+                <div className="flex items-center flex-wrap gap-4">
+                  {/* Rows per page select */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Page Size:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        const newSize = Number(e.target.value);
+                        setPageSize(newSize);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-[#0A0C10] border border-[#232838] text-white rounded px-2 py-1 outline-none font-bold cursor-pointer hover:border-gray-500 transition-all"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={250}>250</option>
+                    </select>
+                  </div>
+
+                  {/* Range indicator */}
+                  <span className="text-gray-400">
+                    Showing <span className="text-white font-bold">{Math.min(filteredDataset.length, (currentPage - 1) * pageSize + 1)}</span> - <span className="text-white font-bold">{Math.min(filteredDataset.length, currentPage * pageSize)}</span> of <span className="text-purple-300 font-bold">{filteredDataset.length}</span> items
+                  </span>
+
+                  {/* Navigation controls */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(1)}
+                      className="p-1.5 bg-[#0A0C10] border border-[#232838] hover:border-purple-500 disabled:opacity-30 disabled:hover:border-[#232838] rounded-md transition-all flex items-center justify-center text-gray-400 hover:text-white"
+                      title="First Page"
+                    >
+                      <ChevronLeft size={14} className="-mr-1.5" />
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className="p-1.5 bg-[#0A0C10] border border-[#232838] hover:border-purple-500 disabled:opacity-30 disabled:hover:border-[#232838] rounded-md transition-all flex items-center justify-center text-gray-400 hover:text-white"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+
+                    <span className="text-gray-400 px-1">
+                      Page <span className="text-white font-bold">{currentPage}</span> of <span className="text-white font-bold">{Math.ceil(filteredDataset.length / pageSize) || 1}</span>
+                    </span>
+
+                    <button
+                      disabled={currentPage >= Math.ceil(filteredDataset.length / pageSize)}
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredDataset.length / pageSize), prev + 1))}
+                      className="p-1.5 bg-[#0A0C10] border border-[#232838] hover:border-purple-500 disabled:opacity-30 disabled:hover:border-[#232838] rounded-md transition-all flex items-center justify-center text-gray-400 hover:text-white"
+                      title="Next Page"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                    <button
+                      disabled={currentPage >= Math.ceil(filteredDataset.length / pageSize)}
+                      onClick={() => setCurrentPage(Math.ceil(filteredDataset.length / pageSize))}
+                      className="p-1.5 bg-[#0A0C10] border border-[#232838] hover:border-purple-500 disabled:opacity-30 disabled:hover:border-[#232838] rounded-md transition-all flex items-center justify-center text-gray-400 hover:text-white"
+                      title="Last Page"
+                    >
+                      <ChevronRight size={14} />
+                      <ChevronRight size={14} className="-ml-1.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Lazy load details */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-400">
+                      Loaded <span className="text-emerald-400 font-bold">{Math.min(filteredDataset.length, lazyLoadLimit)}</span> of <span className="text-purple-300 font-bold">{filteredDataset.length}</span> items
+                    </span>
+
+                    {/* Progress Gauge */}
+                    <div className="w-24 bg-[#0A0C10] h-2 rounded-full overflow-hidden border border-[#232838]">
+                      <div 
+                        className="bg-emerald-500 h-full transition-all duration-300" 
+                        style={{ width: `${Math.min(100, (lazyLoadLimit / (filteredDataset.length || 1)) * 100)}%` }} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={lazyLoadLimit >= filteredDataset.length}
+                      onClick={() => setLazyLoadLimit(prev => prev + 50)}
+                      className="px-3 py-1 bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 border border-emerald-500/30 rounded-md transition-all font-bold disabled:opacity-30"
+                    >
+                      +50 More Items
+                    </button>
+                    <button
+                      disabled={lazyLoadLimit >= filteredDataset.length}
+                      onClick={() => setLazyLoadLimit(filteredDataset.length)}
+                      className="px-3 py-1 bg-purple-950/40 hover:bg-purple-900/40 text-purple-300 border border-purple-500/30 rounded-md transition-all font-bold disabled:opacity-30"
+                    >
+                      Load All {filteredDataset.length}
+                    </button>
+                    {lazyLoadLimit > 25 && (
+                      <button
+                        onClick={() => setLazyLoadLimit(25)}
+                        className="px-2 py-1 bg-gray-950 hover:bg-gray-900 text-gray-400 border border-gray-800 rounded-md transition-all font-bold"
+                      >
+                        Collapse to 25
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Dataset Table with Selection */}
             <div className="bg-[#12151E] border border-[#252A38] rounded-xl overflow-hidden font-mono text-xs max-h-[550px] overflow-y-auto">
               <table className="w-full text-left">
@@ -1625,7 +1781,10 @@ export default function RecursiveLearningStudio({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1A1F2D] text-gray-300">
-                  {filteredDataset.slice(0, 100).map((item) => {
+                  {(datasetViewMode === 'pagination'
+                    ? filteredDataset.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                    : filteredDataset.slice(0, lazyLoadLimit)
+                  ).map((item) => {
                     const isSelected = selectedItemIds.has(item.id);
                     const itemAnomalies = detectedAnomalies.filter(a => a.item.id === item.id && !a.fixed);
                     const hasAnomaly = itemAnomalies.length > 0;
@@ -1699,6 +1858,33 @@ export default function RecursiveLearningStudio({
                       </tr>
                     );
                   })}
+                  {datasetViewMode === 'lazy-load' && lazyLoadLimit < filteredDataset.length && (
+                    <tr>
+                      <td colSpan={9} className="p-4 text-center bg-[#0C0E15]">
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <span className="text-gray-400 text-xs font-mono">
+                            Showing {lazyLoadLimit} of {filteredDataset.length} items. Load more to see the rest.
+                          </span>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => setLazyLoadLimit(prev => prev + 50)}
+                              className="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 shadow text-xs font-mono"
+                            >
+                              <RotateCw size={12} className="animate-spin-slow" />
+                              Load Next 50 Items (Lazy Ingestion)
+                            </button>
+                            <button
+                              onClick={() => setLazyLoadLimit(filteredDataset.length)}
+                              className="px-4 py-1.5 bg-[#1C1F2A] hover:bg-[#2C3042] text-purple-300 border border-purple-500/40 font-bold rounded-lg transition-all flex items-center gap-1.5 shadow text-xs font-mono"
+                            >
+                              <Sparkles size={12} />
+                              Load All Remaining {filteredDataset.length - lazyLoadLimit} Items
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
