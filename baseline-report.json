@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-08-10T20:12:00.000Z",
+  "evaluatedCount": 1024,
+  "modelVersion": "v2.5-zero-shot-legacy",
+  "overallAccuracy": 78.5,
+  "unspscAccuracy": 76.4,
+  "brandRecall": 80.2,
+  "mpnPrecision": 75.8,
+  "invoiceCompliancePct": 81.6,
+  "completenessScoreAvg": 72.4,
+  "sectorMetrics": {
+    "Valves & Fluid Control": {
+      "count": 92,
+      "accuracy": 81.2,
+      "brandMatchPct": 83.5,
+      "mpnMatchPct": 79.2,
+      "unspscMatchPct": 80.9
+    },
+    "Bearings & Power Transmission": {
+      "count": 88,
+      "accuracy": 78.4,
+      "brandMatchPct": 80.1,
+      "mpnMatchPct": 75.5,
+      "unspscMatchPct": 79.6
+    },
+    "Electrical & PLCs": {
+      "count": 104,
+      "accuracy": 76.5,
+      "brandMatchPct": 78.4,
+      "mpnMatchPct": 73.1,
+      "unspscMatchPct": 78.0
+    },
+    "Fasteners & Hardware": {
+      "count": 110,
+      "accuracy": 82.1,
+      "brandMatchPct": 85.0,
+      "mpnMatchPct": 80.2,
+      "unspscMatchPct": 81.1
+    },
+    "Pneumatics & Hydraulics": {
+      "count": 85,
+      "accuracy": 79.0,
+      "brandMatchPct": 81.2,
+      "mpnMatchPct": 76.8,
+      "unspscMatchPct": 79.0
+    },
+    "Motors & Drives": {
+      "count": 76,
+      "accuracy": 74.3,
+      "brandMatchPct": 76.0,
+      "mpnMatchPct": 71.2,
+      "unspscMatchPct": 75.7
+    },
+    "Pumps & Compressors": {
+      "count": 82,
+      "accuracy": 77.2,
+      "brandMatchPct": 79.5,
+      "mpnMatchPct": 74.0,
+      "unspscMatchPct": 78.1
+    },
+    "Cutting Tools & Machining": {
+      "count": 95,
+      "accuracy": 75.8,
+      "brandMatchPct": 77.1,
+      "mpnMatchPct": 72.5,
+      "unspscMatchPct": 77.8
+    },
+    "Safety & PPE": {
+      "count": 93,
+      "accuracy": 83.4,
+      "brandMatchPct": 86.2,
+      "mpnMatchPct": 81.0,
+      "unspscMatchPct": 83.0
+    }
+  },
+  "difficultyMetrics": {
+    "Easy": {
+      "count": 350,
+      "accuracy": 94.6
+    },
+    "Medium": {
+      "count": 412,
+      "accuracy": 85.2
+    },
+    "Hard (Messy OCR)": {
+      "count": 182,
+      "accuracy": 62.4
+    },
+    "Adversarial": {
+      "count": 80,
+      "accuracy": 41.5
+    }
+  }
+}
