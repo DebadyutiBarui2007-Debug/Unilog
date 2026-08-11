@@ -117,7 +117,7 @@ export default function BatchProcessing() {
   const approvedCount = items.filter(i => i.status === 'AUTO_APPROVED').length;
 
   return (
-    <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto">
+    <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto global-scroll-container">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold uppercase tracking-wider text-white">Catalog Batch Enrichment Engine</h2>

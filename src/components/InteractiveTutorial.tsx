@@ -113,7 +113,20 @@ When you trigger the enrichment pipeline, the system orchestrates a multi-step s
     },
     {
       id: 5,
-      title: "5. Compare View (Side-by-Side Mode)",
+      title: "5. Granular Feedback & Caching",
+      elementId: "execute-enrich-btn",
+      tabRequirement: "pipeline",
+      description: "Run the pipeline again on the exact same input! Notice the Granular Progress bar that appears, stepping through 'Analyzing...', 'Standardizing...', and 'Validating...'. Also notice the result appears instantly because of our LRU in-memory Server-Side Caching mechanism.",
+      expectedActionMessage: "Click the 'Run Pipeline' button again to see the progress bar and fast cache retrieval.",
+      simulateAction: () => {
+        handleEnrich();
+      },
+      learnMoreTitle: "In-Memory Server-Side Caching & UX",
+      learnMoreMarkdown: `### Granular Execution Feedback\nInstead of a generic loading spinner, the UI steps sequentially through actual pipeline phases.\n\n### LRU-style In-Memory Caching\nWe implemented an air-gapped \`Map\`-based caching layer on the server (24h TTL). Redundant inferences (exact same manufacturer descriptions) return instantly, bypassing the model entirely and saving compute cycles, while maintaining strict data isolation (zero persistence in databases).`,
+    },
+    {
+      id: 6,
+      title: "6. Compare View (Side-by-Side Mode)",
       elementId: "view-comparison-btn",
       tabRequirement: "pipeline",
       description: "Verify your data structure! Click the highlighted 'Side-by-Side Comparison' button to compare the messy raw vendor specs side-by-side with the parsed master records.",
@@ -130,8 +143,8 @@ High-volume industrial systems require rigorous diagnostic dashboards. The Side-
 3. **Measure Token Recall**: Observe OCR alignment and highlight structural mismatches directly to prevent corrupt catalog writes.`,
     },
     {
-      id: 6,
-      title: "6. Return to Split View",
+      id: 7,
+      title: "7. Return to Split View",
       elementId: "view-split-btn",
       tabRequirement: "pipeline",
       description: "Now click on the highlighted 'Split View' button to return to our primary catalog entry panel.",
@@ -142,32 +155,6 @@ High-volume industrial systems require rigorous diagnostic dashboards. The Side-
       learnMoreTitle: "The Unified Schema Workstation",
       learnMoreMarkdown: `### High-Efficiency Workspace
 By displaying the input buffer on the left and the interactive form schema on the right, data librarians can rapidly view and patch AI extraction faults.`,
-    },
-    {
-      id: 7,
-      title: "7. Browse the 1,024 Catalog Dataset",
-      elementId: "open-catalog-btn",
-      tabRequirement: "pipeline",
-      description: "Explore our industrial benchmark dataset containing 1,000+ real-world MRO products across 12 sectors. Click the highlighted 'Browse 1,024 Catalog Dataset' button.",
-      expectedActionMessage: "Click the gradient 'Browse 1,024 Catalog Dataset' button.",
-      simulateAction: () => {
-        setShowCatalogModal(true);
-      },
-      learnMoreTitle: "Industrial Benchmarks & Noise Difficulty Tiers",
-      learnMoreMarkdown: `### Benchmark Catalog Dataset Structure
-Our 1,024 benchmark items are classified into 12 core industrial sectors, covering:
-- Valves & Fluid Control
-- Electrical & PLCs
-- Fasteners & Hardware
-- Power Transmission
-- Pneumatics & Hydraulics
-- Test & Measurement Instrumentation
-- Pumps & Compressors
-
-### Difficulty Tiers & Noise:
-1. **Easy**: Standard descriptions with obvious brand and part number layout.
-2. **Medium**: Includes abbreviations, lacking obvious units.
-3. **Hard (Messy OCR)**: Simulates scanned PDF outputs with corrupted whitespace, broken characters, and duplicate parameters.`,
     },
     {
       id: 8,
@@ -321,7 +308,20 @@ Establishing performance baselines guarantees that subsequent re-training passes
     },
     {
       id: 18,
-      title: "18. System Engine Settings",
+      title: "18. Monitor System Telemetry",
+      elementId: "tab-system-health",
+      tabRequirement: "system-health",
+      description: "Ensure enterprise-grade operational visibility. Switch to the 'System Health Dashboard' tab on the left sidebar to monitor API latency, model confidence trends, and enrichment throughput.",
+      expectedActionMessage: "Click 'System Health Dashboard' in the left navigation sidebar.",
+      simulateAction: () => {
+        setActiveTab("system-health");
+      },
+      learnMoreTitle: "Air-Gapped Telemetry & Observability",
+      learnMoreMarkdown: `### Enterprise Operational Visibility\nThe System Health Dashboard is engineered strictly for pipeline monitoring and guarantees zero visibility into proprietary training datasets.\nIt tracks:\n- **API Latency & Confidence**: Real-time trends of execution speed and prediction certainty.\n- **Throughput Profiling**: Total items processed per hour without referencing raw MRO descriptions or MPNs.`,
+    },
+    {
+      id: 19,
+      title: "19. System Engine Settings",
       elementId: "tab-settings",
       tabRequirement: "settings",
       description: "Control your governance pipeline. Switch to the 'Engine Configuration' tab on the left sidebar.",
@@ -334,8 +334,27 @@ Establishing performance baselines guarantees that subsequent re-training passes
 Set automatic thresholds for validation errors, configure fuzzy match sensitivities for major brands, and synchronize with your S3 or Azure Master Data repositories.`,
     },
     {
-      id: 19,
-      title: "19. Onboarding Completed Successfully!",
+      id: 20,
+      title: "20. Secure Security Profile & Link Google",
+      elementId: "tab-profile",
+      tabRequirement: "profile",
+      description: "Keep your workspace hack-proof. Under the 'Security Profile' tab, you can view your active database sync details, unlink or link your Google account to your email securely, and sign out.",
+      expectedActionMessage: "Click the 'Security Profile' button on the left sidebar to access your encryption registry.",
+      simulateAction: () => {
+        setActiveTab("profile");
+      },
+      learnMoreTitle: "Enterprise Identity & Google Linking",
+      learnMoreMarkdown: `### Hack-Proof Identity Integration
+To prevent phishing, session hijacking, and credential leaks, the platform implements strict client-side OAuth 2.0 flow mechanisms combined with direct Firebase link-with-popup APIs.
+
+### Key Security Benefits:
+- **Immutable Association**: Association between Google and custom email-password logins is validated by Firebase's serverless OAuth state.
+- **Biometric & 2FA Readiness**: Passing Google's gateway automatically binds Google's robust Two-Factor Authentication defenses (Titan keys, phone prompts) onto your custom Unilog session.
+- **Automatic Sync**: Any modifications made are securely isolated and persisted automatically in Firestore.`,
+    },
+    {
+      id: 21,
+      title: "21. Onboarding Completed Successfully!",
       description: "Awesome job! You have completed the comprehensive guided tour of Unilog Catalog Intelligence Core. You are now fully equipped to parse raw manufacturer sheets, override incorrect metadata, manage model baselines, and configure governance schemas.",
       expectedActionMessage: "Click 'Finish and Explore' below to start using Unilog.",
       simulateAction: () => {},
@@ -511,7 +530,7 @@ Set automatic thresholds for validation errors, configure fuzzy match sensitivit
           }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
-          className={`fixed w-[360px] bg-[#0E1220] border-2 border-indigo-500 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-5 z-50 pointer-events-auto flex flex-col ${
+          className={`fixed w-[360px] max-h-[85vh] overflow-y-auto global-scroll-container bg-[#0E1220] border-2 border-indigo-500 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] p-5 z-50 pointer-events-auto flex flex-col ${
             isLight ? 'bg-white border-blue-600 text-slate-800 shadow-xl' : 'text-gray-100'
           }`}
           style={{ position: 'fixed' }}

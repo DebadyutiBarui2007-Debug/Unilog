@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Image as ImageIcon, LogIn, LogOut, CheckCircle, AlertOctagon, Copy, Check, Sparkles, ChevronDown, ChevronRight, ShieldCheck, Database, Layers, GitCompare, Edit2, Plus, Trash2, Save, X, Type, RefreshCw, BrainCircuit, Palette, Search, Filter, BookOpen, HelpCircle } from 'lucide-react';
+import { Loader2, Image as ImageIcon, LogIn, LogOut, CheckCircle, AlertOctagon, Copy, Check, Sparkles, ChevronDown, ChevronRight, ShieldCheck, Database, Layers, GitCompare, Edit2, Plus, Trash2, Save, X, Type, RefreshCw, BrainCircuit, Palette, Search, Filter, BookOpen, HelpCircle, Activity, UserCircle } from 'lucide-react';
 import AITools from './components/AITools';
 import BatchProcessing from './components/BatchProcessing';
 import SideBySideComparison from './components/SideBySideComparison';
 import RecursiveLearningStudio from './components/RecursiveLearningStudio';
 import InteractiveTutorial from './components/InteractiveTutorial';
+import { AuthGate } from "./components/AuthGate";
+import { SystemHealthDashboard } from './components/SystemHealthDashboard';
+import { ProfileTab } from './components/ProfileTab';
 import { INDUSTRIAL_DATASET_1000, IndustrialCatalogItem } from './data/industrialDataset1000';
-import { auth, login, logout, db } from './firebase';
+import { auth, logout, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
-type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml';
+type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml' | 'system-health' | 'profile';
 
 interface EnrichmentResult {
   classpath: string;
@@ -37,7 +40,7 @@ const PRESET_PRODUCT_INPUTS = [
 ];
 
 export default function App() {
-  const [theme, setTheme] = useState<'cyber-cobalt' | 'clean-slate' | 'titanium-amber'>('cyber-cobalt');
+  const [theme, setTheme] = useState<'cyber-cobalt' | 'clean-slate' | 'titanium-amber' | 'nordic-frost' | 'matcha-latte'>('cyber-cobalt');
   const [themeToast, setThemeToast] = useState<string | null>(null);
 
   // 4-second Startup Booting / Loader Animation State
@@ -230,23 +233,42 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleThemeChange = (newTheme: 'cyber-cobalt' | 'clean-slate' | 'titanium-amber') => {
+  const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
+  const [transitionTarget, setTransitionTarget] = useState<'cyber-cobalt' | 'clean-slate' | 'titanium-amber' | 'nordic-frost' | 'matcha-latte' | null>(null);
+  
+  const handleThemeChange = (newTheme: 'cyber-cobalt' | 'clean-slate' | 'titanium-amber' | 'nordic-frost' | 'matcha-latte') => {
     if (newTheme === theme) return;
-    setTheme(newTheme);
+    setTransitionTarget(newTheme);
+    setIsThemeTransitioning(true);
+    
+    // Framer motion fade sequence:
+    setTimeout(() => {
+      setTheme(newTheme); // underlying theme changes while hidden
+      setTimeout(() => {
+        setIsThemeTransitioning(false);
+        setTransitionTarget(null);
+      }, 50);
+    }, 300); // Wait 300ms for overlay to fade in completely
+
     const themeLabels = {
       'cyber-cobalt': 'Cyber Obsidian Dark',
       'clean-slate': 'Executive Light',
-      'titanium-amber': 'Titanium Amber Industrial'
+      'titanium-amber': 'Titanium Amber Industrial',
+      'nordic-frost': 'Nordic Frost',
+      'matcha-latte': 'Matcha Latte'
     };
     setThemeToast(themeLabels[newTheme]);
     setTimeout(() => setThemeToast(null), 2200);
   };
   const [input, setInput] = useState(PRESET_PRODUCT_INPUTS[0].text);
   const [loading, setLoading] = useState(false);
+  const [pipelineStage, setPipelineStage] = useState('');
+  const [pipelineProgress, setPipelineProgress] = useState(0);
   const [result, setResult] = useState<EnrichmentResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [user, setUser] = useState<User | null>(null);
+  const [authSkipped, setAuthSkipped] = useState(false);
   const [copiedUnspsc, setCopiedUnspsc] = useState(false);
   const [approvalStatus, setApprovalStatus] = useState<'PENDING' | 'APPROVED' | 'FLAGGED'>('PENDING');
   const [showAuditTrail, setShowAuditTrail] = useState(true);
@@ -319,20 +341,26 @@ export default function App() {
   };
 
   // Theme Styling Helpers
-  const isLight = theme === 'clean-slate';
+  const isLight = theme === 'clean-slate' || theme === 'matcha-latte';
   const isAmber = theme === 'titanium-amber';
+  const isNordic = theme === 'nordic-frost';
+  const isMatcha = theme === 'matcha-latte';
+  
+  // Overlay Helper for smooth cross-fade
+  const tTheme = transitionTarget || theme;
+  const overlayBg = tTheme === 'matcha-latte' ? 'bg-[#F4F7F4]' : tTheme === 'nordic-frost' ? 'bg-[#ECEFF4]' : tTheme === 'clean-slate' ? 'bg-[#F8FAFC]' : tTheme === 'titanium-amber' ? 'bg-[#101114]' : 'bg-[#0A0D14]';
 
   const themeStyles = {
-    bg: isLight ? 'bg-[#F8FAFC] text-slate-800' : isAmber ? 'bg-[#101114] text-gray-200' : 'bg-[#0A0D14] text-gray-200',
-    headerBg: isLight ? 'bg-white border-slate-200 text-slate-900 shadow-sm' : isAmber ? 'bg-[#18191E] border-[#2A2D35] text-white' : 'bg-[#0F131E] border-[#1E2638] text-white',
-    cardBg: isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : isAmber ? 'bg-[#1A1C22] border-[#2B2E38]' : 'bg-[#121622] border-[#1E2638]',
-    innerBg: isLight ? 'bg-[#F1F5F9] border-slate-200 text-slate-900' : isAmber ? 'bg-[#111216] border-[#2B2E38] text-white' : 'bg-[#0A0D14] border-[#1E2638] text-white',
-    textMain: isLight ? 'text-slate-900' : 'text-white',
-    textMuted: isLight ? 'text-slate-500' : 'text-gray-400',
-    accentBtn: isLight ? 'bg-blue-600 hover:bg-blue-700 text-white' : isAmber ? 'bg-amber-500 hover:bg-amber-600 text-black font-bold' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]',
-    accentText: isLight ? 'text-blue-600' : isAmber ? 'text-amber-400' : 'text-blue-400',
-    accentBorder: isLight ? 'border-blue-600' : isAmber ? 'border-amber-500' : 'border-blue-500',
-    navBg: isLight ? 'bg-slate-100 border-slate-200' : isAmber ? 'bg-[#131418] border-[#2B2E38]' : 'bg-[#0B0E17] border-[#1E2638]'
+    bg: isMatcha ? 'bg-[#F4F7F4] text-slate-800' : isNordic ? 'bg-[#ECEFF4] text-[#2E3440]' : isLight ? 'bg-[#F8FAFC] text-slate-800' : isAmber ? 'bg-[#101114] text-gray-200' : 'bg-[#0A0D14] text-gray-200',
+    headerBg: isMatcha ? 'bg-[#E8EDE8] border-[#D1DDD1] text-slate-900 shadow-sm' : isNordic ? 'bg-[#E5E9F0] border-[#D8DEE9] text-[#2E3440] shadow-sm' : isLight ? 'bg-white border-slate-200 text-slate-900 shadow-sm' : isAmber ? 'bg-[#18191E] border-[#2A2D35] text-white' : 'bg-[#0F131E] border-[#1E2638] text-white',
+    cardBg: isMatcha ? 'bg-white border-[#D1DDD1] text-slate-800 shadow-sm' : isNordic ? 'bg-[#ECEFF4] border-[#D8DEE9] text-[#3B4252] shadow-sm' : isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : isAmber ? 'bg-[#1A1C22] border-[#2B2E38]' : 'bg-[#121622] border-[#1E2638]',
+    innerBg: isMatcha ? 'bg-[#F9FAF9] border-[#D1DDD1] text-slate-900' : isNordic ? 'bg-[#FFFFFF] border-[#D8DEE9] text-[#2E3440]' : isLight ? 'bg-[#F1F5F9] border-slate-200 text-slate-900' : isAmber ? 'bg-[#111216] border-[#2B2E38] text-white' : 'bg-[#0A0D14] border-[#1E2638] text-white',
+    textMain: isMatcha ? 'text-slate-900' : isNordic ? 'text-[#2E3440]' : isLight ? 'text-slate-900' : 'text-white',
+    textMuted: isMatcha ? 'text-slate-500' : isNordic ? 'text-[#4C566A]' : isLight ? 'text-slate-500' : 'text-gray-400',
+    accentBtn: isMatcha ? 'bg-[#6D9F71] hover:bg-[#5C8960] text-white shadow-sm' : isNordic ? 'bg-[#5E81AC] hover:bg-[#81A1C1] text-white shadow-sm' : isLight ? 'bg-blue-600 hover:bg-blue-700 text-white' : isAmber ? 'bg-amber-500 hover:bg-amber-600 text-black font-bold' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]',
+    accentText: isMatcha ? 'text-[#6D9F71]' : isNordic ? 'text-[#5E81AC]' : isLight ? 'text-blue-600' : isAmber ? 'text-amber-400' : 'text-blue-400',
+    accentBorder: isMatcha ? 'border-[#6D9F71]' : isNordic ? 'border-[#5E81AC]' : isLight ? 'border-blue-600' : isAmber ? 'border-amber-500' : 'border-blue-500',
+    navBg: isMatcha ? 'bg-[#E8EDE8] border-[#D1DDD1]' : isNordic ? 'bg-[#E5E9F0] border-[#D8DEE9]' : isLight ? 'bg-slate-100 border-slate-200' : isAmber ? 'bg-[#131418] border-[#2B2E38]' : 'bg-[#0B0E17] border-[#1E2638]'
   };
 
   // Settings State
@@ -377,9 +405,28 @@ export default function App() {
     if (!input.trim()) return;
     
     setLoading(true);
+    setPipelineStage('Analyzing raw input...');
+    setPipelineProgress(15);
     setError(null);
     setResult(null);
     setApprovalStatus('PENDING');
+
+    // Simulate progress stages
+    const progressInterval = setInterval(() => {
+      setPipelineProgress(prev => {
+        if (prev < 40) {
+          setPipelineStage('Standardizing attributes...');
+          return prev + 15;
+        } else if (prev < 70) {
+          setPipelineStage('Validating taxonomies...');
+          return prev + 20;
+        } else if (prev < 90) {
+          setPipelineStage('Finalizing enrichment...');
+          return prev + 10;
+        }
+        return prev;
+      });
+    }, 600);
 
     try {
       // First try recursive multi-pass self-correction model endpoint
@@ -434,7 +481,14 @@ export default function App() {
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
-      setLoading(false);
+      clearInterval(progressInterval);
+      setPipelineProgress(100);
+      setPipelineStage('Complete');
+      setTimeout(() => {
+        setLoading(false);
+        setPipelineStage('');
+        setPipelineProgress(0);
+      }, 500);
     }
   };
 
@@ -482,7 +536,7 @@ export default function App() {
       initial={{ opacity: 0.92 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className={`flex flex-col h-screen w-full ${themeStyles.bg} font-sans transition-colors duration-500 overflow-hidden relative`}
+      className={`flex flex-col min-h-screen w-full ${themeStyles.bg} font-sans transition-colors duration-500 overflow-y-auto global-scroll-container relative`}
     >
       {/* Theme Transition Notification Toast */}
       <AnimatePresence>
@@ -530,17 +584,16 @@ export default function App() {
         </div>
 
         {/* Theme Chooser Bar with Sliding Motion Pill */}
-        <div className={`flex items-center gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-[#121622]/80 border-slate-800/80'} backdrop-blur-md transition-colors duration-500`}>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 text-gray-400 font-mono flex items-center gap-1">
-            <Palette size={12} className={isAmber ? 'text-amber-400' : isLight ? 'text-blue-600' : 'text-indigo-400'} />
+        <div className={`flex items-center gap-1 p-1 rounded-xl border ${themeStyles.navBg} backdrop-blur-md transition-colors duration-500 overflow-x-auto max-w-full custom-scrollbar`}>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 text-gray-400 font-mono flex items-center gap-1 whitespace-nowrap">
+            <Palette size={12} className={themeStyles.accentText} />
             Theme:
           </span>
           <button
             onClick={() => handleThemeChange('cyber-cobalt')}
-            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 ${
+            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 whitespace-nowrap ${
               theme === 'cyber-cobalt' ? 'text-white' : 'text-gray-400 hover:text-white'
             }`}
-            title="Cyber Obsidian & Cobalt Dark"
           >
             {theme === 'cyber-cobalt' && (
               <motion.div
@@ -549,14 +602,13 @@ export default function App() {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
-            A. Cyber Obsidian
+            Cyber Obsidian
           </button>
           <button
             onClick={() => handleThemeChange('clean-slate')}
-            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 ${
+            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 whitespace-nowrap ${
               theme === 'clean-slate' ? 'text-white' : 'text-gray-400 hover:text-slate-900'
             }`}
-            title="Clean Slate Enterprise Light"
           >
             {theme === 'clean-slate' && (
               <motion.div
@@ -565,14 +617,13 @@ export default function App() {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
-            B. Executive Light
+            Executive Light
           </button>
           <button
             onClick={() => handleThemeChange('titanium-amber')}
-            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 ${
+            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 whitespace-nowrap ${
               theme === 'titanium-amber' ? 'text-black font-bold' : 'text-gray-400 hover:text-amber-400'
             }`}
-            title="Titanium & Warm Amber Industrial"
           >
             {theme === 'titanium-amber' && (
               <motion.div
@@ -581,7 +632,37 @@ export default function App() {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
-            C. Titanium Amber
+            Titanium Amber
+          </button>
+          <button
+            onClick={() => handleThemeChange('nordic-frost')}
+            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 whitespace-nowrap ${
+              theme === 'nordic-frost' ? 'text-white' : 'text-gray-400 hover:text-[#5E81AC]'
+            }`}
+          >
+            {theme === 'nordic-frost' && (
+              <motion.div
+                layoutId="activeThemeHighlight"
+                className="absolute inset-0 bg-[#5E81AC] rounded-lg shadow-md shadow-[#5E81AC]/20 -z-10"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            Nordic Frost
+          </button>
+          <button
+            onClick={() => handleThemeChange('matcha-latte')}
+            className={`relative px-3 py-1 text-[11px] font-mono rounded-lg font-semibold transition-colors duration-200 z-10 whitespace-nowrap ${
+              theme === 'matcha-latte' ? 'text-white' : 'text-gray-400 hover:text-[#6D9F71]'
+            }`}
+          >
+            {theme === 'matcha-latte' && (
+              <motion.div
+                layoutId="activeThemeHighlight"
+                className="absolute inset-0 bg-[#6D9F71] rounded-lg shadow-md shadow-[#6D9F71]/20 -z-10"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            Matcha Latte
           </button>
         </div>
 
@@ -598,14 +679,26 @@ export default function App() {
             <div className={`text-sm font-mono font-bold ${themeStyles.textMain}`}>14,202</div>
           </div>
           {user ? (
-            <div className="flex items-center gap-3">
-              <span className={`text-xs font-mono px-2.5 py-1 rounded-lg border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800/40 border-slate-700/50'} ${themeStyles.textMuted}`}>{user.email}</span>
-              <button onClick={logout} className="text-gray-400 hover:text-red-400 p-1.5 transition-colors" title="Sign Out">
-                <LogOut size={16} />
+            <div className="flex items-center gap-2.5">
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-xl border hover:bg-slate-500/10 transition-colors ${isLight ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-800/40 border-slate-700/50 text-slate-200'}`}
+                title="View Security Profile"
+              >
+                <UserCircle size={15} className="text-indigo-400" />
+                <span>{user.displayName || user.email}</span>
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-white hover:bg-red-600 px-3 py-1.5 rounded-xl border border-red-500/30 hover:border-red-600 transition-all shadow-sm"
+                title="Sign Out of Account"
+              >
+                <LogOut size={14} />
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           ) : (
-            <button onClick={login} className={`flex items-center gap-2 border ${themeStyles.cardBg} px-3.5 py-1.5 text-xs font-semibold rounded-lg uppercase tracking-wider hover:opacity-80 transition-all`}>
+            <button onClick={() => setAuthSkipped(false)} className={`flex items-center gap-2 border ${themeStyles.cardBg} px-3.5 py-1.5 text-xs font-semibold rounded-lg uppercase tracking-wider hover:opacity-80 transition-all`}>
               <LogIn size={14} /> Sign In
             </button>
           )}
@@ -622,89 +715,109 @@ export default function App() {
             <HelpCircle size={15} className="text-indigo-400 animate-pulse" />
             <span>Interactive Tutorial</span>
           </button>
-          <button 
-            id="execute-enrich-btn"
-            onClick={handleEnrich}
-            disabled={loading || !input.trim()}
-            className={`${themeStyles.accentBtn} px-5 py-2 text-xs font-bold rounded-xl uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-md`}
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            {loading ? 'Processing Pipeline...' : 'Run Pipeline'}
-          </button>
+          <div className="relative">
+            <button 
+              id="execute-enrich-btn"
+              onClick={handleEnrich}
+              disabled={loading || !input.trim()}
+              className={`${themeStyles.accentBtn} px-5 py-2 text-xs font-bold rounded-xl uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-md`}
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {loading ? 'Processing Pipeline...' : 'Run Pipeline'}
+            </button>
+            {loading && pipelineProgress > 0 && (
+              <div className="absolute -bottom-8 right-0 w-48 z-10">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  <span>{pipelineStage}</span>
+                  <span>{pipelineProgress}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 dark:bg-indigo-400 transition-all duration-300 ease-out"
+                    style={{ width: `${pipelineProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Main Layout with Expanded Sidebar Navigation */}
       <main className="flex flex-1 overflow-hidden">
-        <nav className={`w-60 ${themeStyles.navBg} border-r flex flex-col justify-between p-4 transition-colors duration-200`}>
+        <nav className={`w-60 ${themeStyles.navBg} border-r flex flex-col justify-between p-4 transition-colors duration-200 overflow-y-auto global-scroll-container shrink-0`}>
           <div className="space-y-1.5">
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 px-3 py-2 font-mono">Workspace Navigation</div>
-            <button 
-              id="tab-pipeline"
-              onClick={() => setActiveTab('pipeline')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'pipeline' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-gray-400 hover:bg-slate-800/30 hover:text-white'
-              }`}
-            >
-              <Database size={16} /> Single Item Pipeline
-            </button>
-            <button 
-              id="tab-batch"
-              onClick={() => setActiveTab('batch')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'batch' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-gray-400 hover:bg-slate-800/30 hover:text-white'
-              }`}
-            >
-              <Layers size={16} /> Bulk Catalog Batch
-            </button>
-            <button 
-              id="tab-history"
-              onClick={() => setActiveTab('history')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'history' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-gray-400 hover:bg-slate-800/30 hover:text-white'
-              }`}
-            >
-              <ShieldCheck size={16} /> Traceability Audit Logs
-            </button>
-            <button 
-              id="tab-ai-tools"
-              onClick={() => setActiveTab('ai-tools')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'ai-tools' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-gray-400 hover:bg-slate-800/30 hover:text-white'
-              }`}
-            >
-              <Sparkles size={16} /> Multi-modal AI Tools
-            </button>
-            <button 
-              id="tab-recursive-ml"
-              onClick={() => setActiveTab('recursive-ml')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'recursive-ml' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 font-bold'
-                  : 'text-purple-400 hover:bg-purple-950/40 hover:text-white'
-              }`}
-            >
-              <BrainCircuit size={16} className="text-purple-400" /> Recursive ML & 1K Dataset
-            </button>
-            <button 
-              id="tab-settings"
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'settings' 
-                  ? isAmber ? 'bg-amber-500 text-black shadow-md font-bold' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-gray-400 hover:bg-slate-800/30 hover:text-white'
-              }`}
-            >
-              <span className="text-sm">⚙</span> Engine Configuration
-            </button>
+            {(
+              [
+                { id: 'pipeline', label: 'Single Item Pipeline', icon: <Database size={16} /> },
+                { id: 'batch', label: 'Bulk Catalog Batch', icon: <Layers size={16} /> },
+                { id: 'history', label: 'Traceability Audit Logs', icon: <ShieldCheck size={16} /> },
+                { id: 'ai-tools', label: 'Multi-modal AI Tools', icon: <Sparkles size={16} /> },
+                { id: 'recursive-ml', label: 'Recursive ML & 1K Dataset', icon: <BrainCircuit size={16} />, customColor: 'purple' },
+                { id: 'system-health', label: 'System Health Dashboard', icon: <Activity size={16} />, customColor: 'emerald' },
+                { id: 'settings', label: 'Engine Configuration', icon: <span className="text-sm">⚙</span> },
+                { id: 'profile', label: 'Security Profile', icon: <UserCircle size={16} /> }
+              ] as Array<{ id: Tab; label: string; icon: React.ReactNode; customColor?: string }>
+            ).map((item) => {
+              const isActive = activeTab === item.id;
+              
+              const getIndicatorColor = () => {
+                if (isAmber) return 'bg-amber-500';
+                if (item.id === 'recursive-ml') return 'bg-purple-600';
+                if (item.id === 'system-health') return 'bg-emerald-600';
+                return 'bg-indigo-600';
+              };
+
+              const getIndicatorShadow = () => {
+                if (isAmber) return 'shadow-md';
+                if (item.id === 'recursive-ml') return 'shadow-lg shadow-purple-600/30';
+                if (item.id === 'system-health') return 'shadow-lg shadow-emerald-600/30';
+                return 'shadow-lg shadow-indigo-600/30';
+              };
+
+              const getTextColor = () => {
+                if (isActive) {
+                  return isAmber ? 'text-black font-bold' : 'text-white font-bold';
+                }
+                if (item.id === 'recursive-ml') return 'text-purple-400 hover:bg-purple-950/20 hover:text-white';
+                if (item.id === 'system-health') return 'text-emerald-500 hover:bg-emerald-950/20 hover:text-white';
+                return 'text-gray-400 hover:bg-slate-800/30 hover:text-white';
+              };
+
+              // Safely clone and pass style props to Lucide icons
+              const iconElement = React.isValidElement(item.icon)
+                ? React.cloneElement(item.icon as React.ReactElement, {
+                    className: isActive 
+                      ? (isAmber ? 'text-black' : 'text-white')
+                      : (item.customColor === 'purple' 
+                          ? 'text-purple-400' 
+                          : item.customColor === 'emerald' 
+                            ? 'text-emerald-500' 
+                            : 'text-gray-400')
+                  })
+                : item.icon;
+
+              return (
+                <button 
+                  key={item.id}
+                  id={`tab-${item.id}`}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group z-10 ${getTextColor()}`}
+                >
+                  {/* Sliding Active Background Indicator */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeSidebarIndicator"
+                      className={`absolute inset-0 rounded-xl -z-10 ${getIndicatorColor()} ${getIndicatorShadow()}`}
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  {iconElement}
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <div className={`p-3 rounded-xl border text-[10px] font-mono space-y-1 ${themeStyles.cardBg}`}>
@@ -716,7 +829,7 @@ export default function App() {
         </nav>
 
         {activeTab === 'pipeline' && (
-          <div className="flex-1 flex flex-col p-6 space-y-5 overflow-y-auto">
+          <div className="flex-1 flex flex-col p-6 space-y-5 overflow-y-auto global-scroll-container">
             {error && (
               <div className="bg-red-900/40 border border-red-500/80 text-red-200 px-4 py-3 rounded-xl text-xs font-mono flex items-center justify-between shadow-lg">
                 <span>⚠️ {error}</span>
@@ -739,14 +852,7 @@ export default function App() {
                     </button>
                   ))}
 
-                  <button
-                    id="open-catalog-btn"
-                    onClick={() => setShowCatalogModal(true)}
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/30 border border-purple-400/30"
-                  >
-                    <BookOpen size={14} />
-                    Browse 1,024 Catalog Dataset
-                  </button>
+                  {/* Catalog Dataset Browser button removed */}
                 </div>
               </div>
 
@@ -869,7 +975,12 @@ export default function App() {
                     )}
 
                     {result && !loading && (
-                      <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="flex-1 space-y-3 overflow-y-auto pr-1"
+                      >
                         <div className="grid grid-cols-3 gap-2.5">
                           <div className={`p-2.5 rounded-xl border ${themeStyles.innerBg}`}>
                             <label className="text-[9px] uppercase font-bold text-gray-400 block mb-0.5">Canonical Brand</label>
@@ -918,7 +1029,7 @@ export default function App() {
                             </button>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 </section>
@@ -1196,7 +1307,7 @@ export default function App() {
         {activeTab === 'batch' && <BatchProcessing />}
 
         {activeTab === 'history' && (
-          <div className="flex-1 flex flex-col p-8 space-y-6 overflow-hidden">
+          <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto global-scroll-container">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-lg text-white font-semibold uppercase tracking-wider">Traceability & System Audit Trail</h2>
@@ -1209,7 +1320,7 @@ export default function App() {
             </div>
             
             <div className="bg-[#12141A] border border-[#2D2F36] rounded overflow-hidden flex-1 flex flex-col">
-              <div className="overflow-y-auto flex-1">
+              <div className="overflow-y-auto global-scroll-container flex-1">
                 <table className="w-full text-left text-xs font-mono">
                   <thead className="bg-[#0A0B0E] text-gray-500 border-b border-[#2D2F36] sticky top-0">
                     <tr>
@@ -1250,7 +1361,7 @@ export default function App() {
         )}
 
         {activeTab === 'settings' && (
-          <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto">
+          <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto global-scroll-container">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-lg text-white font-semibold uppercase tracking-wider">Engine & Governance Configuration</h2>
@@ -1344,163 +1455,43 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'system-health' && (
+          <SystemHealthDashboard 
+            isAmber={isAmber} 
+            isDark={!isLight} 
+          />
+        )}
+
+        {activeTab === 'profile' && (
+          user ? (
+            <ProfileTab 
+              user={user}
+              themeStyles={themeStyles}
+              isLight={isLight}
+              isAmber={isAmber}
+            />
+          ) : (
+            <div className={`p-8 rounded-3xl border ${themeStyles.cardBg} w-full max-w-md mx-auto text-center space-y-6 mt-16 shadow-xl`}>
+              <div className="mx-auto w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                <UserCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className={`text-xl font-bold ${themeStyles.textMain}`}>Security Profile Locked</h3>
+                <p className={`text-sm ${themeStyles.textMuted}`}>Please sign in or create an account to view and configure your identity integration options.</p>
+              </div>
+              <button 
+                onClick={() => setAuthSkipped(false)}
+                className={`w-full py-3 px-4 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all`}
+              >
+                Open Authentication Gate
+              </button>
+            </div>
+          )
+        )}
+
       </main>
 
-      {/* 1,024 Industrial Catalog Item Selection Modal */}
-      <AnimatePresence>
-        {showCatalogModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.94, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 15 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#12151E] border border-[#2D3346] rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh]"
-            >
-              {/* Modal Header */}
-              <div className="bg-[#181C28] px-6 py-4 border-b border-[#2B3142] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400">
-                    <BookOpen size={22} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white font-mono tracking-wide">
-                        1,024 INDUSTRY VALID PRODUCT DATASET CATALOG
-                      </h3>
-                      <span className="bg-purple-950 border border-purple-500/60 text-purple-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono">
-                        12 Industrial Sectors
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5">
-                      Select any real-world MRO/industrial item to test single item enrichment, side-by-side comparison, or batch processing.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowCatalogModal(false)}
-                  className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-[#252B3E] transition-all"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Filters & Search */}
-              <div className="p-5 border-b border-[#232838] bg-[#0E111B] flex flex-wrap items-center justify-between gap-3">
-                <div className="relative flex-1 min-w-[240px]">
-                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={catalogSearchQuery}
-                    onChange={(e) => setCatalogSearchQuery(e.target.value)}
-                    placeholder="Search by part number, brand, or raw description..."
-                    className="w-full bg-[#181C28] border border-[#2B3142] rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 font-mono"
-                  />
-                </div>
-
-                {/* Sector Filter */}
-                <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1">
-                  <span className="text-[11px] font-bold text-gray-400 font-mono uppercase shrink-0">Sector:</span>
-                  {['All', 'Valves & Fluid Control', 'Electrical & PLCs', 'Bearings & Power Transmission', 'Fasteners & Hardware', 'Pneumatics & Hydraulics', 'Motors & Drives', 'Pumps & Compressors'].map((sec) => (
-                    <button
-                      key={sec}
-                      onClick={() => setCatalogSectorFilter(sec)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all shrink-0 border ${
-                        catalogSectorFilter === sec
-                          ? 'bg-purple-600 text-white border-purple-400 shadow'
-                          : 'bg-[#181C28] text-gray-400 border-[#2B3142] hover:text-white'
-                      }`}
-                    >
-                      {sec}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Catalog Items Table */}
-              <div className="p-6 overflow-y-auto flex-1 font-mono text-xs space-y-2">
-                <div className="border border-[#232838] rounded-xl overflow-hidden bg-[#0A0C10]">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#181C28] text-gray-400 sticky top-0 border-b border-[#2B3142]">
-                      <tr>
-                        <th className="p-3 w-16 text-center">ID</th>
-                        <th className="p-3">Sector</th>
-                        <th className="p-3">Raw Supplier Description</th>
-                        <th className="p-3">Brand & MPN</th>
-                        <th className="p-3">UNSPSC</th>
-                        <th className="p-3 text-center">Rec. Accuracy</th>
-                        <th className="p-3 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1B202E]">
-                      {INDUSTRIAL_DATASET_1000
-                        .filter(item => {
-                          const matchesSector = catalogSectorFilter === 'All' || item.sector === catalogSectorFilter;
-                          const q = catalogSearchQuery.toLowerCase().trim();
-                          const matchesQuery = !q || 
-                            item.id.toLowerCase().includes(q) ||
-                            item.rawDescription.toLowerCase().includes(q) ||
-                            item.groundTruthBrand.toLowerCase().includes(q) ||
-                            item.groundTruthMPN.toLowerCase().includes(q);
-                          return matchesSector && matchesQuery;
-                        })
-                        .slice(0, 50)
-                        .map((item) => (
-                          <tr key={item.id} className="hover:bg-[#121622] transition-colors">
-                            <td className="p-3 text-center text-purple-400 font-bold">{item.id}</td>
-                            <td className="p-3">
-                              <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold">
-                                {item.sector}
-                              </span>
-                            </td>
-                            <td className="p-3 text-gray-200 font-medium max-w-sm truncate" title={item.rawDescription}>
-                              {item.rawDescription}
-                            </td>
-                            <td className="p-3 text-white font-bold">
-                              <div>{item.groundTruthBrand}</div>
-                              <div className="text-[10px] text-gray-400 font-normal">{item.groundTruthMPN}</div>
-                            </td>
-                            <td className="p-3 text-purple-300 font-semibold">{item.groundTruthUNSPSC}</td>
-                            <td className="p-3 text-center">
-                              <span className="bg-emerald-950 border border-emerald-500/60 text-emerald-400 text-[10px] px-2 py-0.5 rounded font-bold">
-                                {(item.pass3Accuracy * 100).toFixed(1)}%
-                              </span>
-                            </td>
-                            <td className="p-3 text-center">
-                              <button
-                                onClick={() => {
-                                  setInput(item.rawDescription);
-                                  setShowCatalogModal(false);
-                                  setActiveTab('pipeline');
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shadow transition-all"
-                              >
-                                Select Item
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="bg-[#181C28] px-6 py-3 border-t border-[#2B3142] flex items-center justify-between font-mono text-xs text-gray-400">
-                <span>Showing top matching items out of 1,024 verified industrial catalog records.</span>
-                <button
-                  onClick={() => setShowCatalogModal(false)}
-                  className="bg-[#252B3E] hover:bg-[#323952] text-white font-bold px-4 py-1.5 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Catalog Item Selection Modal removed for privacy and data governance */}
 
       <footer className="px-4 py-2 bg-[#0F1116] border-t border-[#2D2F36] flex items-center justify-between text-[10px] text-gray-600 font-mono">
         <div className="flex space-x-4">
@@ -1579,24 +1570,37 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Loader Header */}
-              <div className="space-y-1.5">
-                <h1 className="text-xl font-black text-white tracking-wider uppercase">
-                  UNILOG <span className="font-light text-indigo-400">PRODUCT INTELLIGENCE</span>
-                </h1>
+              {/* Welcome Loader Header */}
+              <div className="space-y-4">
+                <motion.h1 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="text-3xl font-black text-white tracking-wider"
+                >
+                  Welcome to <span className="font-light text-indigo-400">Unilog</span>
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 1 }}
+                  className="text-slate-300 font-sans text-lg"
+                >
+                  We're preparing your Product Intelligence Workspace...
+                </motion.p>
                 
                 {/* Dynamic Status Readout */}
-                <div className="h-6 flex items-center justify-center">
-                  <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
+                <div className="h-6 flex items-center justify-center mt-4">
+                  <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border transition-colors duration-500 ${
                     bootProgress < 25 ? "bg-indigo-950/80 text-indigo-300 border-indigo-800/50" :
                     bootProgress < 50 ? "bg-teal-950/80 text-teal-300 border-teal-800/50" :
                     bootProgress < 75 ? "bg-purple-950/80 text-purple-300 border-purple-800/50" :
                     "bg-amber-950/80 text-amber-300 border-amber-800/50"
                   }`}>
-                    {bootProgress < 25 && "⚡ [Stage 1/4] Loading ETIM Dictionary Schema"}
-                    {bootProgress >= 25 && bootProgress < 50 && "🛰️ [Stage 2/4] Indexing UNSPSC Classifications"}
-                    {bootProgress >= 50 && bootProgress < 75 && "🧬 [Stage 3/4] Warming Gemini 3.6 Parse Pipes"}
-                    {bootProgress >= 75 && "🚀 [Stage 4/4] Establishing Secure Firestore Sync"}
+                    {bootProgress < 25 && "Gathering your tools..."}
+                    {bootProgress >= 25 && bootProgress < 50 && "Loading intelligence models..."}
+                    {bootProgress >= 50 && bootProgress < 75 && "Organizing your dashboard..."}
+                    {bootProgress >= 75 && "Almost there..."}
                   </span>
                 </div>
               </div>
@@ -1671,6 +1675,19 @@ export default function App() {
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Secure Auth Gate for New Users */}
+      <AnimatePresence>
+        {!isBooting && !user && !authSkipped && (
+          <AuthGate 
+            onSuccess={() => setAuthSkipped(true)} 
+            onSkip={() => setAuthSkipped(true)} 
+            themeStyles={themeStyles} 
+            isLight={isLight} 
+            isAmber={isAmber} 
+          />
         )}
       </AnimatePresence>
 

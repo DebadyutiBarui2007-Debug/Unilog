@@ -1,6 +1,6 @@
 {
   "name": "Unilog Product Enrichment",
   "description": "An AI-powered product content enrichment pipeline for industrial distributors.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera", "microphone", "geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -7,7 +7,7 @@ export default function AITools() {
   const [activeTool, setActiveTool] = useState<'voice' | 'search' | 'maps' | 'image' | 'transcribe' | 'history'>('voice');
   
   return (
-    <div className="flex-1 flex flex-col p-8 space-y-6 overflow-hidden">
+    <div className="flex-1 flex flex-col p-8 space-y-6 overflow-y-auto global-scroll-container">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl text-white font-bold uppercase tracking-wider">Multi-modal AI Workspace</h2>
@@ -154,7 +154,16 @@ function VoiceChat() {
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
           
-          const audioBuffer = await outputCtx.decodeAudioData(bytes.buffer.slice(0));
+          const sampleRate = 24000;
+          const frameCount = bytes.length / 2;
+          const audioBuffer = outputCtx.createBuffer(1, frameCount, sampleRate);
+          const channelData = audioBuffer.getChannelData(0);
+          const dataView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+          for (let i = 0; i < frameCount; i++) {
+            const int16 = dataView.getInt16(i * 2, true);
+            channelData[i] = int16 < 0 ? int16 / 0x8000 : int16 / 0x7FFF;
+          }
+
           const source = outputCtx.createBufferSource();
           source.buffer = audioBuffer;
           source.connect(outputCtx.destination);
@@ -170,7 +179,9 @@ function VoiceChat() {
       };
 
       ws.onopen = () => setStatus('Connected - Speak Now');
-      ws.onclose = () => stopLive();
+      ws.onclose = () => {
+        stopLive();
+      };
     } catch (e: any) {
       console.error(e);
       setStatus('Error: ' + e.message);
@@ -178,10 +189,23 @@ function VoiceChat() {
   };
 
   const stopLive = () => {
-    if (wsRef.current) wsRef.current.close();
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (inputAudioCtxRef.current) inputAudioCtxRef.current.close();
-    if (outputAudioCtxRef.current) outputAudioCtxRef.current.close();
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (inputAudioCtxRef.current && inputAudioCtxRef.current.state !== 'closed') {
+      inputAudioCtxRef.current.close().catch(() => {});
+      inputAudioCtxRef.current = null;
+    }
+    if (outputAudioCtxRef.current && outputAudioCtxRef.current.state !== 'closed') {
+      outputAudioCtxRef.current.close().catch(() => {});
+      outputAudioCtxRef.current = null;
+    }
     setStatus('Disconnected');
   };
 
