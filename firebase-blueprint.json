@@ -5,8 +5,9 @@
       "description": "A chat message",
       "type": "object",
       "properties": {
-        "text": { "type": "string" },
-        "sender": { "type": "string" },
+        "text": { "type": "string", "maxLength": 10000 },
+        "title": { "type": "string", "maxLength": 256 },
+        "sender": { "type": "string", "maxLength": 128 },
         "createdAt": { "type": "string", "format": "date-time" },
         "userId": { "type": "string", "maxLength": 128 }
       },

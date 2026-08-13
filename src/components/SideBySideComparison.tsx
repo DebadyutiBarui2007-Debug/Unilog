@@ -42,6 +42,7 @@ export default function SideBySideComparison({
   onUpdateAttributes
 }: SideBySideComparisonProps) {
   const [filter, setFilter] = useState<'all' | 'taxonomy' | 'governance' | 'attributes'>('all');
+  const [showDifferencesOnly, setShowDifferencesOnly] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // Bulk Edit Attributes State
@@ -204,6 +205,7 @@ export default function SideBySideComparison({
   ];
 
   const filteredItems = comparisonItems.filter(item => {
+    if (showDifferencesOnly && item.raw === item.enriched) return false;
     if (filter === 'all') return true;
     if (filter === 'taxonomy') return item.category === 'taxonomy';
     if (filter === 'governance') return item.category === 'governance';
@@ -238,27 +240,45 @@ export default function SideBySideComparison({
           </div>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${themeStyles.textMuted}`}>Filter Diff:</span>
-          {[
-            { id: 'all', label: 'All Transforms' },
-            { id: 'taxonomy', label: 'Taxonomy Code' },
-            { id: 'governance', label: 'Field Standards' },
-            { id: 'attributes', label: 'Technical Attributes' }
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setFilter(item.id as any)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                filter === item.id
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/40 text-gray-400 hover:text-white border border-slate-700/50'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        {/* Filter Pills & Show Differences Toggle */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowDifferencesOnly(!showDifferencesOnly)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+              showDifferencesOnly
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-amber-900/30 ring-2 ring-amber-500/30'
+                : 'bg-slate-800/60 text-gray-300 hover:text-white border-slate-700/60'
+            }`}
+            title="Toggle highlighting and filtering of changed or added attributes"
+          >
+            <Sparkles size={14} className={showDifferencesOnly ? 'text-amber-400 animate-pulse' : 'text-gray-400'} />
+            <span>{showDifferencesOnly ? 'Show Differences: ACTIVE' : 'Show Differences'}</span>
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-700/60 hidden sm:block" />
+
+          <div className="flex items-center gap-1.5">
+            <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${themeStyles.textMuted}`}>Filter:</span>
+            {[
+              { id: 'all', label: 'All Transforms' },
+              { id: 'taxonomy', label: 'Taxonomy Code' },
+              { id: 'governance', label: 'Field Standards' },
+              { id: 'attributes', label: 'Technical Attributes' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setFilter(item.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  filter === item.id
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'bg-slate-800/40 text-gray-400 hover:text-white border border-slate-700/50'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -481,20 +501,49 @@ export default function SideBySideComparison({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {result.attributes.map((attr, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/20 transition-colors">
-                      <td className="p-3.5 font-semibold text-indigo-300">{attr.name}</td>
+                  {result.attributes
+                    .map((attr, originalIdx) => {
+                      const isDirectValueMatch = rawInput.toLowerCase().includes(attr.value.toLowerCase());
+                      const isDirectNameMatch = rawInput.toLowerCase().includes(attr.name.toLowerCase().replace(/_/g, ' '));
+                      const isDiff = !isDirectValueMatch || !isDirectNameMatch || attr.uom !== 'TEXT';
+                      const diffType = !isDirectNameMatch ? 'ADDED' : !isDirectValueMatch ? 'STANDARDIZED' : 'NORMALIZED';
+                      
+                      return { attr, originalIdx, isDiff, diffType };
+                    })
+                    .filter(item => !showDifferencesOnly || item.isDiff)
+                    .map(({ attr, originalIdx, isDiff, diffType }) => (
+                    <tr key={originalIdx} className={`transition-colors ${
+                      showDifferencesOnly || isDiff 
+                        ? 'bg-amber-950/10 hover:bg-amber-950/30' 
+                        : 'hover:bg-slate-800/20'
+                    }`}>
+                      <td className="p-3.5 font-semibold text-indigo-300 flex items-center gap-2">
+                        {isDiff && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" title="Changed or added attribute" />
+                        )}
+                        <span>{attr.name}</span>
+                      </td>
                       <td className="p-3.5 text-gray-400">
-                        <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/60 text-[11px]">
-                          "{attr.value}"
+                        <span className={`px-2 py-1 rounded border text-[11px] ${
+                          isDiff 
+                            ? 'bg-amber-950/30 border-amber-800/50 text-amber-300' 
+                            : 'bg-slate-800/60 border-slate-700/60'
+                        }`}>
+                          {rawInput.length > 50 ? rawInput.substring(0, 48) + '...' : rawInput}
                         </span>
                       </td>
                       <td className="p-3.5 text-center">
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
-                          ✓ ETIM 9.0 Standardized
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                          diffType === 'ADDED'
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            : diffType === 'STANDARDIZED'
+                            ? 'bg-amber-950 text-amber-300 border-amber-800'
+                            : 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                        }`}>
+                          {diffType === 'ADDED' ? '+ AI EXTRACTED' : diffType === 'STANDARDIZED' ? 'Δ LOV STANDARDIZED' : '✓ ETIM 9.0 Standardized'}
                         </span>
                       </td>
-                      <td className="p-3.5 font-bold text-white">{attr.value}</td>
+                      <td className={`p-3.5 font-bold ${isDiff ? 'text-amber-200' : 'text-white'}`}>{attr.value}</td>
                       <td className="p-3.5 text-amber-400 font-bold">{attr.uom || 'TEXT'}</td>
                       <td className="p-3.5 text-emerald-400 font-bold flex items-center gap-1">
                         <ShieldCheck size={12} /> 99.2%
@@ -505,6 +554,13 @@ export default function SideBySideComparison({
                     <tr>
                       <td colSpan={6} className="p-6 text-center text-gray-500 italic">
                         No technical attributes available. Click "Bulk Edit Attributes" to add attributes manually.
+                      </td>
+                    </tr>
+                  )}
+                  {showDifferencesOnly && result.attributes.filter(a => !rawInput.toLowerCase().includes(a.value.toLowerCase())).length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-amber-400/80 italic font-semibold">
+                        All extracted attributes match raw input baseline. Toggle "Show Differences" to view full attribute list.
                       </td>
                     </tr>
                   )}

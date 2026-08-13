@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Image as ImageIcon, LogIn, LogOut, CheckCircle, AlertOctagon, Copy, Check, Sparkles, ChevronDown, ChevronRight, ShieldCheck, Database, Layers, GitCompare, Edit2, Plus, Trash2, Save, X, Type, RefreshCw, BrainCircuit, Palette, Search, Filter, BookOpen, HelpCircle, Activity, UserCircle } from 'lucide-react';
+import { Loader2, Image as ImageIcon, LogIn, LogOut, CheckCircle, AlertOctagon, Copy, Check, Sparkles, ChevronDown, ChevronRight, ShieldCheck, Database, Layers, GitCompare, Edit2, Plus, Trash2, Save, X, Type, RefreshCw, BrainCircuit, Palette, Search, Filter, BookOpen, HelpCircle, Activity, UserCircle, TrendingUp, Download } from 'lucide-react';
+import { exportSingleEnrichmentCSV } from './utils/csvExportUtils';
 import AITools from './components/AITools';
+import MarketIntelligence from './components/MarketIntelligence';
 import BatchProcessing from './components/BatchProcessing';
 import SideBySideComparison from './components/SideBySideComparison';
 import RecursiveLearningStudio from './components/RecursiveLearningStudio';
@@ -10,10 +12,10 @@ import { AuthGate } from "./components/AuthGate";
 import { SystemHealthDashboard } from './components/SystemHealthDashboard';
 import { ProfileTab } from './components/ProfileTab';
 import { INDUSTRIAL_DATASET_1000, IndustrialCatalogItem } from './data/industrialDataset1000';
-import { auth, logout, db } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth, logout, db, subscribeAuthState } from './firebase';
+import { User } from 'firebase/auth';
 
-type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml' | 'system-health' | 'profile';
+type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml' | 'system-health' | 'profile' | 'market-intelligence';
 
 interface EnrichmentResult {
   classpath: string;
@@ -370,8 +372,11 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = subscribeAuthState((currentUser) => {
       setUser(currentUser);
+      if (!currentUser) {
+        setAuthSkipped(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -381,22 +386,45 @@ export default function App() {
     if (!file) return;
 
     setLoading(true);
+    setPipelineStage('Running Vision OCR analysis on uploaded datasheet/photo...');
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const res = await fetch('/api/analyze-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64 })
-        });
-        const data = await res.json();
-        setInput((prev) => prev + '\n[Vision AI Analysis]: ' + data.text);
+        try {
+          const base64 = (reader.result as string).split(',')[1];
+          const res = await fetch('/api/analyze-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageBase64: base64,
+              mimeType: file.type || 'image/jpeg'
+            })
+          });
+          const data = await res.json();
+          if (res.ok && (data.text || data.data)) {
+            const extractedText = data.text || (data.data ? `Brand: ${data.data.brand || 'N/A'} | Model: ${data.data.model || 'N/A'} | MPN: ${data.data.mpn || 'N/A'}\nDescription: ${data.data.description || ''}` : 'OCR extraction finished.');
+            
+            setInput((prev) => {
+              const cleanPrev = prev.trim();
+              return cleanPrev 
+                ? `${cleanPrev}\n\n[Vision AI Analysis]:\n${extractedText}` 
+                : `[Vision AI Analysis]:\n${extractedText}`;
+            });
+          } else {
+            setError(`Vision OCR Error: ${data.error || 'Failed to extract text from image.'}`);
+          }
+        } catch (err: any) {
+          setError(`Image processing error: ${err.message || 'Unknown error'}`);
+        } finally {
+          setLoading(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      setError('Image analysis failed');
-    } finally {
+      setError(`File reading error: ${err.message || 'Unknown error'}`);
       setLoading(false);
     }
   };
@@ -754,6 +782,7 @@ export default function App() {
                 { id: 'batch', label: 'Bulk Catalog Batch', icon: <Layers size={16} /> },
                 { id: 'history', label: 'Traceability Audit Logs', icon: <ShieldCheck size={16} /> },
                 { id: 'ai-tools', label: 'Multi-modal AI Tools', icon: <Sparkles size={16} /> },
+                { id: 'market-intelligence', label: 'Market Intelligence', icon: <TrendingUp size={16} />, customColor: 'indigo' },
                 { id: 'recursive-ml', label: 'Recursive ML & 1K Dataset', icon: <BrainCircuit size={16} />, customColor: 'purple' },
                 { id: 'system-health', label: 'System Health Dashboard', icon: <Activity size={16} />, customColor: 'emerald' },
                 { id: 'settings', label: 'Engine Configuration', icon: <span className="text-sm">⚙</span> },
@@ -787,14 +816,14 @@ export default function App() {
 
               // Safely clone and pass style props to Lucide icons
               const iconElement = React.isValidElement(item.icon)
-                ? React.cloneElement(item.icon as React.ReactElement, {
+                ? React.cloneElement(item.icon as any, {
                     className: isActive 
                       ? (isAmber ? 'text-black' : 'text-white')
                       : (item.customColor === 'purple' 
                           ? 'text-purple-400' 
                           : item.customColor === 'emerald' 
-                            ? 'text-emerald-500' 
-                            : 'text-gray-400')
+                          ? 'text-emerald-500' 
+                          : 'text-gray-400')
                   })
                 : item.icon;
 
@@ -954,10 +983,19 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center mb-3">
+                    <div className="flex justify-between items-center mb-3 pr-28">
                       <h2 className={`text-xs uppercase font-bold tracking-wider flex items-center gap-2 ${result ? 'text-indigo-400' : themeStyles.textMuted}`}>
                         <span className={`w-2.5 h-2.5 ${result ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-gray-600'} rounded-full`}></span> Commerce-Ready Product Intelligence
                       </h2>
+                      {result && !loading && (
+                        <button
+                          onClick={() => exportSingleEnrichmentCSV(result, input)}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1 shadow-sm transition-all"
+                          title="Download standardized master header CSV"
+                        >
+                          <Download size={12} /> Download CSV
+                        </button>
+                      )}
                     </div>
                     
                     {!result && !loading && (
@@ -1015,6 +1053,13 @@ export default function App() {
                         <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-700/50 bg-slate-900/50 mt-2">
                           <span className="text-[10px] font-mono text-gray-300">Human Governance Review:</span>
                           <div className="flex gap-2">
+                            <button
+                              onClick={() => exportSingleEnrichmentCSV(result, input)}
+                              className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all"
+                              title="Export current enrichment in standardized master CSV format"
+                            >
+                              <Download size={12} /> Download CSV
+                            </button>
                             <button 
                               onClick={handleApproveRecord}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all"
@@ -1442,6 +1487,8 @@ export default function App() {
         )}
 
         {activeTab === 'ai-tools' && <AITools />}
+
+        {activeTab === 'market-intelligence' && <MarketIntelligence />}
 
         {activeTab === 'recursive-ml' && (
           <RecursiveLearningStudio 

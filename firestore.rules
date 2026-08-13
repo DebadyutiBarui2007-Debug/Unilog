@@ -6,28 +6,24 @@ service cloud.firestore {
     }
 
     function isSignedIn() { return request.auth != null; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-    function incoming() { return request.resource.data; }
-    function existing() { return resource.data; }
 
-    function isValidMessage(data) {
-      return data.keys().hasAll(['text', 'sender', 'createdAt', 'userId']) 
-        && data.keys().size() == 4
-        && data.text is string && data.text.size() <= 1000
-        && data.sender is string && data.sender.size() <= 128
-        && data.createdAt == request.time
-        && data.userId is string && data.userId.size() <= 128
-        && data.userId == request.auth.uid;
+    match /users/{userId} {
+      allow read, write: if true;
+      match /{allPaths=**} {
+        allow read, write: if true;
+      }
     }
 
-    match /users/{userId}/messages/{messageId} {
-      allow read: if isSignedIn() && request.auth.uid == userId && isValidId(messageId);
-      allow list: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn() 
-        && request.auth.uid == userId
-        && isValidId(messageId)
-        && isValidMessage(incoming());
-      // No updates or deletes for messages
+    match /custom_accounts/{emailId} {
+      allow read, write: if true;
+    }
+
+    match /password_resets/{resetId} {
+      allow read, write: if true;
+    }
+
+    match /deleted_emails/{emailId} {
+      allow read, write: if true;
     }
   }
 }

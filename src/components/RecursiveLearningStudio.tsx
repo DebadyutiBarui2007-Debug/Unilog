@@ -3581,7 +3581,7 @@ export default function RecursiveLearningStudio({
                           if (!isTraining && activeEpochMetrics.length === 0) {
                             return base;
                           }
-                          const lastMetric = activeEpochMetrics[activeEpochMetrics.length - 1];
+                          const lastMetric = activeEpochMetrics[activeEpochMetrics.length - 1] as any;
                           if (lastMetric && lastMetric.categoryAccuracies && lastMetric.categoryAccuracies[categoryName]) {
                             return lastMetric.categoryAccuracies[categoryName];
                           }
