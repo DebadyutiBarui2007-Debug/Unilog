@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CheckCircle2, MousePointerClick, ArrowRight, X, ChevronRight, 
   ChevronLeft, Info, BookOpen, Sparkles, Cpu
@@ -44,6 +44,7 @@ export default function InteractiveTutorial({
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number; placement: 'top' | 'bottom' | 'right' | 'left' | 'center' }>({ top: 0, left: 0, placement: 'center' });
   const [isElementVisible, setIsElementVisible] = useState(true);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   const tutorialSteps: TutorialStep[] = [
     {
@@ -182,34 +183,135 @@ Each tool implements specialized prompt systems:
     },
     {
       id: 11,
-      title: "11. Intelligence: Market Advisory",
+      title: "11. Market Intelligence & Elasticity Engine",
       elementId: "tab-market-intelligence",
       tabRequirement: "market-intelligence",
-      description: "Time for business insights! Click on the 'Market Intelligence' tab to access our strategic advisor.",
+      description: "Explore econometric pricing power! The Market Intelligence suite models Price Elasticity of Demand (PED), continuous revenue/profit curves, 4-quadrant strategic matrices, and live Google Search Grounded intelligence.",
       expectedActionMessage: "Click 'Market Intelligence' in the left navigation sidebar.",
       simulateAction: () => { setActiveTab("market-intelligence"); },
-      learnMoreTitle: "Market Intelligence & Competitor Tracking",
-      learnMoreMarkdown: `### Strategic Procurement & Analytics
-The Market Intelligence tab connects directly to Gemini 3.6 Flash using Google Search Grounding to generate real-time competitor metrics and matrices.`,
+      learnMoreTitle: "Econometric Modeling & Microeconomic Theory",
+      learnMoreMarkdown: `### The Microeconomic Foundation
+In B2B Industrial Distribution, pricing mistakes cost millions. Unilog integrates microeconomic Price Elasticity of Demand (PED):
+$$\\varepsilon = -\\frac{\\% \\Delta Q}{\\% \\Delta P} = -\\frac{\\partial Q}{\\partial P} \\times \\frac{P}{Q}$$
+
+### Strategic Value:
+1. **Inelastic SKUs ($\\varepsilon < 1$)**: High switching costs & OEM lock-in allow distributors to expand margins without risking volume attrition.
+2. **Elastic SKUs ($\\varepsilon > 1$)**: Highly competitive commodities require dynamic indexing to protect market share against spot competitors.`,
     },
     {
       id: 12,
-      title: "12. Intelligence: Executive Strategy",
-      elementId: "market-strategy-section",
+      title: "12. Intelligence: Industrial SKU Benchmarks",
+      elementId: "market-preset-skus",
       tabRequirement: "market-intelligence",
-      description: "Notice the 'Executive Business & Growth Strategy' section at the end of the analysis. It acts as a 30+ year Business Analytics Expert to guide Industry Leaders on scaling and positioning.",
-      expectedActionMessage: "Review the Executive Strategy section.",
+      description: "Quick-load real-world industrial SKU benchmarks with pre-calibrated elasticity coefficients—from proprietary Rockwell PLC processors to commodity Grade 8 Fasteners.",
+      expectedActionMessage: "Click any SKU chip (e.g., 'Rockwell PLC CPU' or 'SKF Bearing') in the ribbon.",
       simulateAction: () => {},
-      learnMoreTitle: "30+ Years Experience Persona Integration",
-      learnMoreMarkdown: `### Advanced Persona Prompting
-By instructing the AI to act as a seasoned executive, the generated output shifts from basic specs comparison to actionable C-level guidance covering scaling, targeting, and supply chain.`,
+      learnMoreTitle: "Catalog SKU Archetypes & Elasticity Calibration",
+      learnMoreMarkdown: `### Calibrated Industrial Archetypes
+- **Rockwell 1756-L83E CPU** ($\\varepsilon = 0.42$): Mission-critical automation controller with proprietary ecosystem lock-in.
+- **SKF 6205-2RSH Bearing** ($\\varepsilon = 1.15$): Precision bearing with brand preference but viable alternatives from NSK/FAG.
+- **Parker 1/2\\" Brass Valve** ($\\varepsilon = 0.78$): Critical fluid control assembly with medium switching friction.
+- **Festo DSNU Cylinder** ($\\varepsilon = 1.35$): Pneumatic actuator facing direct interchangeable catalog competition.
+- **Grade 8 Hex Cap Screws** ($\\varepsilon = 2.40$): High-velocity fungible commodity vulnerable to spot price shopping.`,
     },
     {
       id: 13,
-      title: "13. ML Studio: Recursive Baselines",
+      title: "13. Intelligence: Real-Time KPI HUD",
+      elementId: "market-kpi-hud",
+      tabRequirement: "market-intelligence",
+      description: "The Executive KPI HUD calculates real-time profit optimization metrics: Baseline Unit Price ($P_0$), AI Optimal Price ($P^*$), Profit Maximization Delta ($+\\Delta\\Pi$), and Elasticity Coefficient ($\\varepsilon$).",
+      expectedActionMessage: "Review the 4 real-time KPI metric cards at the top.",
+      simulateAction: () => { document.getElementById('market-subtab-curves')?.click(); },
+      learnMoreTitle: "Profit Maximization Mathematical Proof",
+      learnMoreMarkdown: `### Optimization Target ($P^*$)
+The engine calculates Total Profit $\\Pi(P) = (P - c) \\cdot Q(P)$, where $c$ is the Unit COGS.
+
+At the profit-maximizing peak:
+$$\\frac{d\\Pi}{dP} = Q(P) + (P - c)\\frac{dQ}{dP} = 0$$
+
+$$\\implies P^* = \\frac{\\varepsilon}{\\varepsilon - 1} \\cdot c \\quad (\\text{for } \\varepsilon > 1)$$
+
+The HUD calculates whether your current pricing is below or above this optimal profit frontier!`,
+    },
+    {
+      id: 14,
+      title: "14. Intelligence: Dynamic HUD Sliders",
+      elementId: "market-ped-sliders",
+      tabRequirement: "market-intelligence",
+      description: "Experiment in real-time! Adjust Baseline Price, Unit COGS, Annual Volume, Elasticity ($\\varepsilon$), and Competitor Pressure index to see how curves shift instantly.",
+      expectedActionMessage: "Drag any slider in the Elasticity & Cost Parameters HUD on the left.",
+      simulateAction: () => { document.getElementById('market-subtab-curves')?.click(); },
+      learnMoreTitle: "Real-Time Sensitivity Testing",
+      learnMoreMarkdown: `### Interactive Parametric Modeling
+Distributor pricing teams can run instant 'what-if' analyses:
+- What happens to gross profit if raw material COGS rises 12%?
+- If competitor pressure jumps to 85%, how much volume will we surrender at current price?
+- Can we safely execute a 5% margin increase without triggering customer attrition?`,
+    },
+    {
+      id: 15,
+      title: "15. Intelligence: Profit Optimization Curves",
+      elementId: "market-price-curves-chart",
+      tabRequirement: "market-intelligence",
+      description: "Dual-axis econometric visualization charting continuous Gross Revenue ($k), Gross Profit ($k), and Quantity Demand across the price spectrum, marking the optimal $P^*$ peak.",
+      expectedActionMessage: "Examine the interactive Area and Line charts.",
+      simulateAction: () => { document.getElementById('market-subtab-curves')?.click(); },
+      learnMoreTitle: "Dual-Axis Visualization Architecture",
+      learnMoreMarkdown: `### Interpreting the Visual Curves
+- **Emerald Green Area**: Gross Profit ($\\\\Pi$). The vertical peak highlights the mathematical profit apex ($P^*$).
+- **Indigo Area**: Gross Top-line Revenue ($R = P \\times Q$).
+- **Purple Line**: Downward-sloping Demand Curve ($Q(P)$).
+- **Amber Dotted Line**: Current baseline price ($P_0$), showing exactly where you are operating today relative to the optimal frontier.`,
+    },
+    {
+      id: 16,
+      title: "16. Intelligence: 4-Quadrant Elasticity Matrix",
+      elementId: "market-subtab-matrix",
+      tabRequirement: "market-intelligence",
+      description: "Switch to the 4-Quadrant Elasticity Matrix! It categorizes catalog items into Strategic Moat, Differentiated Precision, Essential MRO Staple, and Fungible Commodity.",
+      expectedActionMessage: "Click the '4-Quadrant Matrix' sub-tab button.",
+      simulateAction: () => { document.getElementById('market-subtab-matrix')?.click(); },
+      learnMoreTitle: "The Industrial 4-Quadrant Framework",
+      learnMoreMarkdown: `### Strategic Matrix Categorization
+1. **Quadrant I: Strategic Moat** (High Margin • $\\varepsilon < 1$): Proprietary OEM systems. Strategy: *Value-based premium pricing & SLA lock-in*.
+2. **Quadrant II: Differentiated Precision** (High Margin • $\\varepsilon > 1$): Precision engineered components. Strategy: *Dynamic catalog indexing & volume tiering*.
+3. **Quadrant III: Essential MRO Staple** (Low Margin • $\\varepsilon < 1$): Critical valves & gaskets. Strategy: *Cost-plus formula indexing & vendor-managed inventory (VMI)*.
+4. **Quadrant IV: Fungible Commodity** (Low Margin • $\\varepsilon > 2$): Fasteners & wiring. Strategy: *Automated programmatic spot-bidding & bulk logistics*.`,
+    },
+    {
+      id: 17,
+      title: "17. Intelligence: Sensitivity & Scenario Matrix",
+      elementId: "market-subtab-scenarios",
+      tabRequirement: "market-intelligence",
+      description: "Switch to the Scenario Matrix! Compare 6 discrete pricing strategies (Liquidation, Competitive Penetration, Baseline, AI Optimal, Margin Expansion, Skimming) and export to CSV.",
+      expectedActionMessage: "Click the 'Scenario Matrix' sub-tab button.",
+      simulateAction: () => { document.getElementById('market-subtab-scenarios')?.click(); },
+      learnMoreTitle: "Scenario Planning & CSV Governance",
+      learnMoreMarkdown: `### Multi-Scenario Decision Governance
+Each scenario models forecasted demand, projected revenue, net profit delta, margin percentages, and empirical risk ratings.
+
+The **Export Scenario CSV** button generates an audit-ready spreadsheet ready for ERP import (SAP, Epicor Prophet 21, Infor) or executive board review.`,
+    },
+    {
+      id: 18,
+      title: "18. Intelligence: Live AI Grounded Advisory",
+      elementId: "market-subtab-ai",
+      tabRequirement: "market-intelligence",
+      description: "Switch to Executive AI Advisory! Powered by Gemini 3.6 with real-time Google Search Grounding to scrape distributor catalogs, analyze competitor pricing, and output executive strategies.",
+      expectedActionMessage: "Click the 'Executive AI Advisory' sub-tab button.",
+      simulateAction: () => { document.getElementById('market-subtab-ai')?.click(); },
+      learnMoreTitle: "Google Search Grounding & Executive Persona",
+      learnMoreMarkdown: `### Live Web Grounding Intelligence
+- **Live Competitor Scraping**: Queries Grainger, McMaster-Carr, Motion Industries, and RS Components in real time.
+- **Supply Chain Risk Signals**: Tracks lead times, tariff impacts, and component shortages.
+- **30+ Year C-Level Executive Advisory**: Generates actionable procurement frameworks, margin protection strategies, and negotiation playbooks.`,
+    },
+    {
+      id: 19,
+      title: "19. ML Studio: Recursive Baselines",
       elementId: "tab-recursive-ml",
       tabRequirement: "recursive-ml",
-      description: "Navigate to the Machine Learning center. Click on the 'Recursive ML & 1K Dataset' tab.",
+      description: "Navigate to the Machine Learning center. Click on the 'Recursive ML & 1K Dataset' tab to inspect self-correcting neural loops.",
       expectedActionMessage: "Click 'Recursive ML & 1K Dataset' tab in the sidebar.",
       simulateAction: () => { setActiveTab("recursive-ml"); },
       learnMoreTitle: "Recursive Self-Correction & Epochs",
@@ -217,11 +319,11 @@ By instructing the AI to act as a seasoned executive, the generated output shift
 Recursive learning generates structured data, automatically runs validators against it, and feeds anomalies back into its prompt system as negative constraints to self-correct.`,
     },
     {
-      id: 14,
-      title: "14. Health: System Telemetry",
+      id: 20,
+      title: "20. Health: System Telemetry",
       elementId: "tab-system-health",
       tabRequirement: "system-health",
-      description: "Switch to the 'System Health Dashboard' tab to monitor API latency, model confidence trends, and throughput.",
+      description: "Switch to the 'System Health Dashboard' tab to monitor API latency, model confidence trends, and pipeline throughput.",
       expectedActionMessage: "Click 'System Health Dashboard' in the sidebar.",
       simulateAction: () => { setActiveTab("system-health"); },
       learnMoreTitle: "Air-Gapped Telemetry & Observability",
@@ -229,8 +331,8 @@ Recursive learning generates structured data, automatically runs validators agai
 The dashboard tracks latency and throughput profiling strictly for pipeline monitoring, guaranteeing zero visibility into proprietary training datasets.`,
     },
     {
-      id: 15,
-      title: "15. Health: Flagged Reviews (SLA)",
+      id: 21,
+      title: "21. Health: Flagged Reviews (SLA)",
       elementId: "pending-flagged-reviews",
       tabRequirement: "system-health",
       description: "The 'Pending Flagged Reviews (Last 24h)' panel tracks low-confidence matches. It allows human operators to quickly review, verify, and resolve anomalies within a 24-hour SLA.",
@@ -241,8 +343,8 @@ The dashboard tracks latency and throughput profiling strictly for pipeline moni
 While the AI auto-approves items with >90% confidence, edge cases are flagged for human validation. The dashboard dynamically filters recent records to keep the ingestion queue unblocked.`,
     },
     {
-      id: 16,
-      title: "16. Settings: Engine Configuration",
+      id: 22,
+      title: "22. Settings: Engine Configuration",
       elementId: "tab-settings",
       tabRequirement: "settings",
       description: "Control your governance pipeline. Switch to the 'Engine Configuration' tab.",
@@ -253,8 +355,8 @@ While the AI auto-approves items with >90% confidence, edge cases are flagged fo
 Set automatic thresholds for validation errors, configure fuzzy match sensitivities, and synchronize with your Master Data repositories.`,
     },
     {
-      id: 17,
-      title: "17. Profile: Secure Identity",
+      id: 23,
+      title: "23. Profile: Secure Identity",
       elementId: "tab-profile",
       tabRequirement: "profile",
       description: "Keep your workspace hack-proof. Under the 'Security Profile' tab, you can manage active database syncs and link your Google account securely.",
@@ -265,19 +367,18 @@ Set automatic thresholds for validation errors, configure fuzzy match sensitivit
 The platform implements strict client-side OAuth 2.0 flow mechanisms combined with Firebase APIs to prevent phishing and session hijacking.`,
     },
     {
-      id: 18,
-      title: "18. Onboarding Completed!",
-      description: "Awesome job! You have explored all the powerful tabs and features of the Unilog Product Intelligence Suite. You are now ready to scale your catalog governance.",
+      id: 24,
+      title: "24. Onboarding Completed!",
+      description: "Awesome job! You have explored all the powerful tabs and features of the Unilog Product Intelligence Suite, including the newly integrated Econometric Market Intelligence & Elasticity Matrix.",
       expectedActionMessage: "Click 'Finish and Explore' below to start using Unilog.",
       simulateAction: () => {},
       learnMoreTitle: "Next Steps",
       learnMoreMarkdown: `### Recommended Next Steps
-1. **Connect Authentication**: Sign in using Firebase.
-2. **Run Batch Processing**: Process 100+ raw strings.
-3. **Clear Flagged Records**: Monitor your System Health daily!`,
+1. **Simulate Price Elasticity**: Select industrial SKUs and tune cost/price sliders to find $P^*$.
+2. **Review Strategic Matrix**: Position your high-margin vs commodity catalog lines.
+3. **Run Batch Processing**: Process 100+ raw strings and track system health!`,
     },
   ];
-
 
   const currentStep = tutorialSteps[currentStepIdx];
 
@@ -285,6 +386,26 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
     if (currentStep.tabRequirement && activeTab !== currentStep.tabRequirement) {
       setActiveTab(currentStep.tabRequirement);
     }
+
+    // Auto-switch Market Intelligence sub-tabs if the target element belongs to a specific sub-tab
+    const timer = setTimeout(() => {
+      if (currentStep.elementId === 'market-quadrant-matrix' || currentStep.elementId === 'market-subtab-matrix') {
+        document.getElementById('market-subtab-matrix')?.click();
+      } else if (currentStep.elementId === 'market-scenario-table' || currentStep.elementId === 'market-subtab-scenarios') {
+        document.getElementById('market-subtab-scenarios')?.click();
+      } else if (currentStep.elementId === 'market-ai-advisory-container' || currentStep.elementId === 'market-subtab-ai') {
+        document.getElementById('market-subtab-ai')?.click();
+      } else if (
+        currentStep.elementId === 'market-price-curves-chart' || 
+        currentStep.elementId === 'market-ped-sliders' || 
+        currentStep.elementId === 'market-kpi-hud' ||
+        currentStep.elementId === 'market-subtab-curves'
+      ) {
+        document.getElementById('market-subtab-curves')?.click();
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, [currentStepIdx, activeTab]);
 
   const updateTargetCoordinates = () => {
@@ -307,8 +428,8 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
       const inViewport = rect.bottom > 40 && rect.top < window.innerHeight - 40;
       setIsElementVisible(inViewport);
 
-      const tooltipWidth = 400;
-      const tooltipHeight = 340;
+      const tooltipWidth = cardRef.current?.offsetWidth || 400;
+      const tooltipHeight = cardRef.current?.offsetHeight || 420;
 
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
@@ -319,17 +440,31 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
       let left = Math.max(16, rect.left + (rect.width / 2) - (tooltipWidth / 2));
       let placement: 'top' | 'bottom' | 'right' | 'left' | 'center' = 'bottom';
 
-      if (spaceBelow < 280 && spaceAbove > 280) {
+      if (spaceBelow < tooltipHeight + 16 && spaceAbove >= tooltipHeight + 16) {
         top = rect.top - tooltipHeight - 14;
         placement = 'top';
-      } else if (spaceBelow < 220 && spaceRight > tooltipWidth + 20) {
-        top = Math.max(16, rect.top + (rect.height / 2) - (tooltipHeight / 2));
+      } else if (spaceBelow < tooltipHeight + 16 && spaceRight >= tooltipWidth + 16) {
+        top = Math.max(16, rect.top);
         left = rect.right + 14;
         placement = 'right';
-      } else if (spaceBelow < 220 && spaceLeft > tooltipWidth + 20) {
-        top = Math.max(16, rect.top + (rect.height / 2) - (tooltipHeight / 2));
+      } else if (spaceBelow < tooltipHeight + 16 && spaceLeft >= tooltipWidth + 16) {
+        top = Math.max(16, rect.top);
         left = rect.left - tooltipWidth - 14;
         placement = 'left';
+      } else if (spaceBelow < tooltipHeight + 16 && spaceAbove < tooltipHeight + 16) {
+        if (spaceRight >= tooltipWidth + 16) {
+          top = Math.max(16, (window.innerHeight - tooltipHeight) / 2);
+          left = rect.right + 14;
+          placement = 'right';
+        } else if (spaceLeft >= tooltipWidth + 16) {
+          top = Math.max(16, (window.innerHeight - tooltipHeight) / 2);
+          left = rect.left - tooltipWidth - 14;
+          placement = 'left';
+        } else {
+          top = Math.max(16, (window.innerHeight - tooltipHeight) / 2);
+          left = Math.max(16, (window.innerWidth - tooltipWidth) / 2);
+          placement = 'center';
+        }
       }
 
       // Clamp within safe viewport borders
@@ -452,9 +587,10 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStepIdx}
+          ref={cardRef}
           drag
           dragMomentum={false}
-          dragConstraints={{ left: 10, top: 10, right: window.innerWidth - 420, bottom: window.innerHeight - 360 }}
+          dragConstraints={{ left: -100, top: -100, right: window.innerWidth - 300, bottom: window.innerHeight - 300 }}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -464,12 +600,12 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
             top: `${tooltipPos.top}px`,
             left: `${tooltipPos.left}px`,
           }}
-          className={`w-[400px] max-h-[85vh] overflow-y-auto global-scroll-container bg-slate-900/95 border border-slate-700 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-[62] pointer-events-auto flex flex-col backdrop-blur-none cursor-default ${
+          className={`w-[400px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] bg-slate-900/95 border border-slate-700 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-[62] pointer-events-auto flex flex-col backdrop-blur-none cursor-default overflow-hidden ${
             isLight ? 'bg-white/95 border-blue-600 text-slate-800 shadow-2xl' : 'text-gray-100'
           }`}
         >
           {/* Progress bar */}
-          <div className="w-full h-1.5 bg-slate-800 rounded-t-2xl overflow-hidden">
+          <div className="w-full h-1.5 bg-slate-800 shrink-0 overflow-hidden">
             <motion.div 
               className="h-full bg-gradient-to-r from-cyan-400 to-indigo-500"
               initial={{ width: 0 }}
@@ -478,51 +614,54 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
             />
           </div>
 
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-700/50 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
-                  <Sparkles className="text-cyan-400" size={15} />
-                </div>
-                <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 uppercase tracking-widest">
-                  Industrial Tour
-                </span>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-700/50 p-4 pb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
+                <Sparkles className="text-cyan-400" size={15} />
               </div>
-              <div className="flex items-center gap-2">
-                {!isElementVisible && currentStep.elementId && (
-                  <button
-                    onClick={scrollToCurrentElement}
-                    className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold px-2 py-0.5 rounded hover:bg-amber-500/30 transition-colors"
-                  >
-                    Scroll to Target
-                  </button>
-                )}
-                <span className="text-[10px] text-cyan-300 font-bold bg-cyan-900/40 border border-cyan-800 px-2.5 py-0.5 rounded-full shadow-inner">
-                  {currentStepIdx + 1} / {tutorialSteps.length}
-                </span>
-                <button 
-                  onClick={onClose}
-                  className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-800"
-                  title="Exit Tutorial"
-                >
-                  <X size={15} />
-                </button>
-              </div>
+              <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 uppercase tracking-widest">
+                Industrial Tour
+              </span>
             </div>
+            <div className="flex items-center gap-2">
+              {!isElementVisible && currentStep.elementId && (
+                <button
+                  onClick={scrollToCurrentElement}
+                  className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold px-2 py-0.5 rounded hover:bg-amber-500/30 transition-colors"
+                >
+                  Scroll to Target
+                </button>
+              )}
+              <span className="text-[10px] text-cyan-300 font-bold bg-cyan-900/40 border border-cyan-800 px-2.5 py-0.5 rounded-full shadow-inner">
+                {currentStepIdx + 1} / {tutorialSteps.length}
+              </span>
+              <button 
+                onClick={onClose}
+                className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-800"
+                title="Exit Tutorial"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
 
-            {/* Title & Description */}
-            <h4 className={`text-[15px] font-black mb-2.5 tracking-wide leading-tight ${isLight ? 'text-indigo-600' : 'text-white'}`}>
+          {/* Scrollable Content Body */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 global-scroll-container">
+            <h4 className={`text-[14px] font-black tracking-wide leading-tight ${isLight ? 'text-indigo-600' : 'text-white'}`}>
               {currentStep.title}
             </h4>
 
-            <p className={`text-[12px] leading-relaxed mb-4 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+            <p className={`text-[12px] leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
               {currentStep.description}
             </p>
+          </div>
 
+          {/* Pinned Action & Controls Footer */}
+          <div className={`shrink-0 border-t border-slate-700/50 p-4 space-y-3 ${isLight ? 'bg-slate-50/95 border-slate-200' : 'bg-slate-900/95'}`}>
             {/* Expected Action / Instruction Card */}
-            <div className={`bg-slate-800/60 border border-slate-700/80 rounded-xl p-3.5 mb-4 shadow-inner ${isLight ? 'bg-slate-50 border-slate-200' : ''}`}>
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-black mb-1.5 tracking-wider">
+            <div className={`bg-slate-800/60 border border-slate-700/80 rounded-xl p-3 shadow-inner ${isLight ? 'bg-white border-slate-200' : ''}`}>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-black mb-1 tracking-wider">
                 <CheckCircle2 size={12} /> Expected Action
               </div>
               <div className={`text-[11px] leading-relaxed flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'} font-semibold`}>
@@ -533,15 +672,15 @@ The platform implements strict client-side OAuth 2.0 flow mechanisms combined wi
               {currentStep.elementId && (
                 <button
                   onClick={handleSimulateAndProceed}
-                  className="mt-3 w-full bg-slate-700/80 hover:bg-slate-600 border border-slate-600/90 text-white py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg"
+                  className="mt-2.5 w-full bg-slate-700/80 hover:bg-slate-600 border border-slate-600/90 text-white py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg"
                 >
                   <Cpu size={12} className="text-cyan-400" /> Auto-Simulate & Proceed
                 </button>
               )}
             </div>
 
-            {/* Controls Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-between pt-1">
               <button
                 onClick={() => setShowLearnMore(true)}
                 className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors px-2 py-1 -ml-2 rounded-lg hover:bg-cyan-500/10"

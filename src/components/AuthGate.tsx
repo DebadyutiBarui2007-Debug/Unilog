@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Lock, User, ShieldCheck, ArrowRight, UserPlus, LogIn, KeyRound, ArrowLeft, CheckCircle2, RefreshCw, Check, AlertTriangle, UserCheck } from 'lucide-react';
+import { Mail, Lock, User, ShieldCheck, ArrowRight, UserPlus, LogIn, KeyRound, ArrowLeft, CheckCircle2, RefreshCw, Check, AlertTriangle, UserCheck, X } from 'lucide-react';
 import { 
   registerWithEmail, 
   loginWithEmail, 
@@ -14,12 +14,13 @@ import {
 interface AuthGateProps {
   onSuccess: () => void;
   onSkip: () => void;
+  onClose?: () => void;
   themeStyles: any;
   isLight: boolean;
   isAmber: boolean;
 }
 
-export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onSkip, themeStyles, isLight, isAmber }) => {
+export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onSkip, onClose, themeStyles, isLight, isAmber }) => {
   const [isSignUp, setIsSignUp] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [resetSentMessage, setResetSentMessage] = useState('');
@@ -382,6 +383,23 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onSkip, themeStyl
       >
         <div className="absolute inset-0 bg-[radial-gradient(rgba(99,102,241,0.03)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
         
+        {/* Top-Right Dismiss / Skip Button */}
+        <button
+          type="button"
+          onClick={() => {
+            if (onClose) onClose();
+            else onSkip();
+          }}
+          className={`absolute top-4 right-4 p-2 rounded-xl border transition-all z-20 ${
+            isLight 
+              ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600' 
+              : 'bg-slate-850 hover:bg-slate-750 border-slate-700/60 text-slate-400 hover:text-white'
+          }`}
+          title="Close and Launch Guided Tutorial"
+        >
+          <X size={16} />
+        </button>
+
         <div className="relative z-10 space-y-5">
           {/* Header */}
           <div className="text-center space-y-2">

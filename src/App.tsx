@@ -52,6 +52,8 @@ export default function App() {
   
   // Interactive Guided Onboarding Tutorial State
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  // Track whether the tutorial has already auto-started once for this loaded page session
+  const hasAutoStartedTutorialThisSession = useRef<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -226,8 +228,11 @@ export default function App() {
         clearInterval(timer);
         setTimeout(() => {
           setIsBooting(false);
-          // Auto-trigger tutorial unconditionally after loading animation
-          setShowTutorial(true);
+          // If user is already authenticated when the app reloads, auto-start tutorial on initial reload
+          if (auth.currentUser && !hasAutoStartedTutorialThisSession.current) {
+            hasAutoStartedTutorialThisSession.current = true;
+            setShowTutorial(true);
+          }
         }, 150);
       }
     }, 50);
@@ -1488,7 +1493,13 @@ export default function App() {
 
         {activeTab === 'ai-tools' && <AITools />}
 
-        {activeTab === 'market-intelligence' && <MarketIntelligence />}
+        {activeTab === 'market-intelligence' && (
+          <MarketIntelligence 
+            themeStyles={themeStyles}
+            isLight={isLight}
+            isAmber={isAmber}
+          />
+        )}
 
         {activeTab === 'recursive-ml' && (
           <RecursiveLearningStudio 
@@ -1729,8 +1740,33 @@ export default function App() {
       <AnimatePresence>
         {!isBooting && !user && !authSkipped && (
           <AuthGate 
-            onSuccess={() => setAuthSkipped(true)} 
-            onSkip={() => setAuthSkipped(true)} 
+            onSuccess={() => {
+              setAuthSkipped(true);
+              if (!hasAutoStartedTutorialThisSession.current) {
+                hasAutoStartedTutorialThisSession.current = true;
+                setTimeout(() => {
+                  setShowTutorial(true);
+                }, 200);
+              }
+            }} 
+            onSkip={() => {
+              setAuthSkipped(true);
+              if (!hasAutoStartedTutorialThisSession.current) {
+                hasAutoStartedTutorialThisSession.current = true;
+                setTimeout(() => {
+                  setShowTutorial(true);
+                }, 200);
+              }
+            }} 
+            onClose={() => {
+              setAuthSkipped(true);
+              if (!hasAutoStartedTutorialThisSession.current) {
+                hasAutoStartedTutorialThisSession.current = true;
+                setTimeout(() => {
+                  setShowTutorial(true);
+                }, 200);
+              }
+            }}
             themeStyles={themeStyles} 
             isLight={isLight} 
             isAmber={isAmber} 
@@ -1738,8 +1774,8 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Onboarding Interactive Tutorial Portal Overlay */}
-      {showTutorial && (
+      {/* Onboarding Interactive Tutorial Portal Overlay - automatically starts after auth is completed/closed */}
+      {showTutorial && !isBooting && (
         <InteractiveTutorial 
           activeTab={activeTab}
           setActiveTab={(tab) => setActiveTab(tab)}
@@ -1749,7 +1785,6 @@ export default function App() {
           setShowCatalogModal={(show) => setShowCatalogModal(show)}
           onClose={() => {
             setShowTutorial(false);
-            localStorage.setItem('unilog_tutorial_completed', 'true');
           }}
           isLight={isLight}
         />
