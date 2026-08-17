@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Activity, Zap, Server, ShieldCheck, Cpu } from 'lucide-react';
+import { Activity, Zap, Server, ShieldCheck, Cpu, AlertTriangle, Clock, ArrowRight } from 'lucide-react';
 
 const MOCK_METRICS = [
   { time: '08:00', latency: 210, confidence: 91, throughput: 120 },
@@ -12,8 +12,23 @@ const MOCK_METRICS = [
   { time: '14:00', latency: 200, confidence: 97, throughput: 260 },
 ];
 
+const MOCK_FLAGGED_RECORDS = [
+  { id: 'REC-892', description: 'Parker Hannifin 4-4 FCTX-S', reason: 'Ambiguous taxonomy match', timeFlagged: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), confidence: 78, reviewed: false },
+  { id: 'REC-893', description: 'Allen-Bradley 1756-EN2T', reason: 'Missing mandatory attributes', timeFlagged: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), confidence: 82, reviewed: false },
+  { id: 'REC-895', description: 'Generic 1/4" Steel Pipe 10ft', reason: 'Low brand confidence', timeFlagged: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(), confidence: 65, reviewed: false },
+  { id: 'REC-880', description: 'Old Motor', reason: 'Legacy format', timeFlagged: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), confidence: 55, reviewed: false }, // Older than 24h
+  { id: 'REC-890', description: 'SKF 6205', reason: 'Resolved', timeFlagged: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), confidence: 88, reviewed: true }, // Already reviewed
+];
+
 export const SystemHealthDashboard: React.FC<{ isAmber: boolean; isDark: boolean }> = ({ isAmber, isDark }) => {
   const [data, setData] = useState(MOCK_METRICS);
+  const [flaggedRecords, setFlaggedRecords] = useState(MOCK_FLAGGED_RECORDS);
+
+  // Filter flagged records for the last 24 hours that haven't been reviewed
+  const recentUnreviewedFlags = flaggedRecords.filter(record => {
+    const isWithin24Hours = (Date.now() - new Date(record.timeFlagged).getTime()) <= 24 * 60 * 60 * 1000;
+    return isWithin24Hours && !record.reviewed;
+  });
 
   // Simulate real-time updates
   useEffect(() => {
@@ -151,6 +166,79 @@ export const SystemHealthDashboard: React.FC<{ isAmber: boolean; isDark: boolean
               </AreaChart>
             </ResponsiveContainer>
           </div>
+        </div>
+
+        {/* Flagged Records Review Panel */}
+        <div className={`p-6 rounded-2xl border ${themeClasses.card} mb-8`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold flex items-center gap-2 text-red-500">
+              <AlertTriangle size={18} /> 
+              Pending Flagged Reviews (Last 24h)
+            </h3>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${isDark ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+              {recentUnreviewedFlags.length} Actions Required
+            </span>
+          </div>
+
+          {recentUnreviewedFlags.length === 0 ? (
+            <div className={`text-center py-8 ${themeClasses.textMuted}`}>
+              <ShieldCheck size={32} className="mx-auto mb-2 opacity-50" />
+              <p>All clear! No pending flagged records in the last 24 hours.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className={`border-b ${themeClasses.border} text-xs uppercase tracking-wider ${themeClasses.textMuted}`}>
+                    <th className="pb-3 font-semibold pl-4">Record ID</th>
+                    <th className="pb-3 font-semibold">Description</th>
+                    <th className="pb-3 font-semibold">Flag Reason</th>
+                    <th className="pb-3 font-semibold">Time Flagged</th>
+                    <th className="pb-3 font-semibold">Confidence</th>
+                    <th className="pb-3 font-semibold text-right pr-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {recentUnreviewedFlags.map((record) => (
+                    <tr key={record.id} className={`border-b ${themeClasses.border} last:border-0 hover:${isDark ? 'bg-slate-800/50' : 'bg-gray-50'}`}>
+                      <td className="py-4 pl-4 font-mono text-xs">{record.id}</td>
+                      <td className="py-4 font-medium">{record.description}</td>
+                      <td className="py-4">
+                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>
+                          {record.reason}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-1.5 text-gray-500">
+                          <Clock size={14} />
+                          {new Date(record.timeFlagged).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span className={`font-semibold ${record.confidence < 70 ? 'text-red-500' : 'text-amber-500'}`}>
+                          {record.confidence}%
+                        </span>
+                      </td>
+                      <td className="py-4 text-right pr-4">
+                        <button
+                          onClick={() => {
+                            setFlaggedRecords(prev => prev.map(r => r.id === record.id ? { ...r, reviewed: true } : r));
+                          }}
+                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors
+                            ${isDark 
+                              ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                            }`}
+                        >
+                          Review <ArrowRight size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

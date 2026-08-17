@@ -15,7 +15,7 @@ import { INDUSTRIAL_DATASET_1000, IndustrialCatalogItem } from './data/industria
 import { auth, logout, db, subscribeAuthState } from './firebase';
 import { User } from 'firebase/auth';
 
-type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml' | 'system-health' | 'profile' | 'market-intelligence';
+export type Tab = 'pipeline' | 'batch' | 'history' | 'settings' | 'ai-tools' | 'recursive-ml' | 'system-health' | 'profile' | 'market-intelligence';
 
 interface EnrichmentResult {
   classpath: string;

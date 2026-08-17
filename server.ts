@@ -121,7 +121,7 @@ function generateGroundTruthPrompt(description: string): string {
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  const PORT = 3000;
 
   // Set limits for larger payloads (images/audio)
   app.use(express.json({ limit: '50mb' }));
@@ -1028,13 +1028,14 @@ Return JSON with: classpath, unspscCode, brand, mpn, invoiceDesc (max 40 chars u
       }
 
       const prompt = `
-Act as a senior market analyst and industrial procurement expert.
+Act as a Business Analytics Industry Expert with 30+ years of Industrial and Business experience.
 Analyze the following industrial MRO product: "${query}"
 
 Perform Google Search Grounding to find real, current commercial facts. Focus on:
 1. Identifying 2-3 direct competitor alternative models from brands like SKF, Parker, Siemens, Rockwell Allen-Bradley, Festo, Norgren, Timken, etc.
 2. Comparing technical specs, efficiency, lifespans, certification levels, and market pricing.
 3. Formulating a structured 'Buy vs. Sell' advisory recommendation for engineering leadership and senior procurement officers.
+4. Concluding with a robust marketing and business growth strategy for Industry Leaders.
 
 Return your analysis in this exact format. Do not deviate from this schema:
 
@@ -1068,6 +1069,9 @@ Provide a highly technical, rigorous argument justifying the recommendation. Foc
 - Total Cost of Ownership (TCO)
 - Availability/Lead times
 - Interoperability & certification standards (ANSI, ISO, NEMA, etc.)
+
+## Executive Business & Growth Strategy
+Conclude with a high-level marketing or business strategy for this product category that will effectively help Industry Leaders grow their business. Focus on market positioning, scaling operations, targeting key industrial sectors, or innovating supply chain approaches.
 `;
 
       const interaction = await safeInteractionsCreate({
